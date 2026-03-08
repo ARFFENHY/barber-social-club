@@ -727,6 +727,11 @@ function AdminDashboard() {
           <AdminScheduleSettings />
           <AdminBlockedSlots />
         </TabsContent>
+
+        {/* ===================== CONTENIDO ===================== */}
+        <TabsContent value="content" className="space-y-6">
+          <AdminContentManager />
+        </TabsContent>
       </Tabs>
 
       {/* Edit appointment dialog */}
