@@ -91,10 +91,10 @@ export default function AdminServices() {
   };
 
   return (
-    <Card className="border-border">
+    <Card className="border-border bg-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="font-display">Gestión de Servicios</CardTitle>
+          <CardTitle className="font-display text-gradient-gold">Gestión de Servicios</CardTitle>
           <Button size="sm" onClick={openNew}>
             <Plus className="w-4 h-4 mr-1" /> Nuevo
           </Button>
