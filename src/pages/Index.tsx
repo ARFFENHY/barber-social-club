@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Clock, Star, Users, MapPin, Phone, Instagram, MessageCircle, Scissors, Calendar, Menu, X } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
