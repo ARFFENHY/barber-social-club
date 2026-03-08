@@ -49,6 +49,7 @@ export default function Index() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
+                <NotificationBell />
                 {isAdmin && (
                   <Link to="/admin" className="hidden sm:inline-flex">
                     <Button variant="outline" size="sm">Admin</Button>
