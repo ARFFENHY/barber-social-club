@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
+import AdminBlockedSlots from "@/components/AdminBlockedSlots";
 
 type ViewMode = "day" | "week";
 
