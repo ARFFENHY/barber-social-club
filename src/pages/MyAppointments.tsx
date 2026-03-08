@@ -49,9 +49,12 @@ export default function MyAppointments() {
           <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" /> Inicio
           </Link>
-          <Link to="/reservar">
-            <Button size="sm">Nueva Reserva</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Link to="/reservar">
+              <Button size="sm">Nueva Reserva</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
