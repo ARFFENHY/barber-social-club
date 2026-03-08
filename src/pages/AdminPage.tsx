@@ -452,8 +452,9 @@ function AdminDashboard() {
       </TabsContent>
 
       {/* ===================== CONFIGURACIÓN ===================== */}
-      <TabsContent value="settings">
+      <TabsContent value="settings" className="space-y-6">
         <AdminScheduleSettings />
+        <AdminBlockedSlots />
       </TabsContent>
     </Tabs>
   );
