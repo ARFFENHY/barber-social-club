@@ -14,25 +14,6 @@ import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-// Barber IDs
-const NACHO_ID = "12a62650-13cd-4c83-8714-86ef19a72556";
-const NESTOR_ID = "84aac2e4-615e-45c5-9a84-8c4400813489";
-
-// Barber available days (JS day: 0=Sun, 1=Mon, ..., 6=Sat)
-const BARBER_DAYS: Record<string, number[]> = {
-  [NACHO_ID]: [2, 3, 4, 5, 6],  // Tue-Sat
-  [NESTOR_ID]: [5, 6],           // Fri-Sat
-};
-
-// Schedule blocks by day
-const SCHEDULE_BLOCKS: Record<number, { start: string; end: string }[]> = {
-  2: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  3: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  4: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  5: [{ start: "10:00", end: "20:00" }],
-  6: [{ start: "10:00", end: "20:00" }],
-};
-
 const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
   const slots: string[] = [];
   for (const block of blocks) {
@@ -49,6 +30,8 @@ const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], d
   }
   return slots;
 };
+
+
 
 export default function BookingPage() {
   const { user } = useAuth();
@@ -72,7 +55,24 @@ export default function BookingPage() {
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
 
-  // Filter barbers based on which ones work on the selected date
+  // Parse schedule from settings
+  const scheduleBlocks = useMemo(() => {
+    const blocks: Record<number, { start: string; end: string }[]> = {};
+    const schedules = settings?.working_hours?.schedules;
+    if (schedules) {
+      for (const sched of schedules) {
+        for (const day of sched.days) {
+          blocks[day] = sched.blocks.map((b: any) => ({ start: b.start, end: b.end }));
+        }
+      }
+    }
+    return blocks;
+  }, [settings]);
+
+  const barberDays: Record<string, number[]> = useMemo(() => {
+    return settings?.barber_schedules || {};
+  }, [settings]);
+
   const availableBarbers = useMemo(() => {
     if (!barbers) return [];
     return barbers;
@@ -82,10 +82,10 @@ export default function BookingPage() {
   const allSlots = useMemo(() => {
     if (!selectedDate) return [];
     const dayOfWeek = selectedDate.getDay();
-    const blocks = SCHEDULE_BLOCKS[dayOfWeek];
+    const blocks = scheduleBlocks[dayOfWeek];
     if (!blocks) return [];
     return generateTimeSlotsFromBlocks(blocks, slotDuration);
-  }, [selectedDate, slotDuration]);
+  }, [selectedDate, slotDuration, scheduleBlocks]);
 
   const bookedTimes = new Set(appointments?.map((a) => a.time.slice(0, 5)) || []);
   const blockedTimes = new Set<string>();
@@ -106,15 +106,9 @@ export default function BookingPage() {
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
     const day = date.getDay();
-    const barberDays = BARBER_DAYS[selectedBarber];
-    return barberDays ? barberDays.includes(day) : false;
-  };
-
-  const isBarberAvailableOnDay = (barberId: string, date?: Date) => {
-    if (!date) return true;
-    const day = date.getDay();
-    const days = BARBER_DAYS[barberId];
-    return days ? days.includes(day) : false;
+    const days = barberDays[selectedBarber];
+    // Barber must work that day AND shop must be open
+    return days ? days.includes(day) && !!scheduleBlocks[day] : false;
   };
 
   const handleBook = async () => {
@@ -219,8 +213,9 @@ export default function BookingPage() {
             <h2 className="text-2xl font-display font-bold mb-6">Elegí tu barbero</h2>
             <div className="grid grid-cols-2 gap-4">
               {availableBarbers?.map((barber) => {
-                const days = BARBER_DAYS[barber.id];
-                const dayLabels = days?.includes(2) && days?.includes(5) ? "Mar a Sáb" : "Vie y Sáb";
+                const days = barberDays[barber.id] || [];
+                const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+                const dayLabels = days.map((d: number) => DAY_NAMES[d]).join(", ");
                 return (
                   <button
                     key={barber.id}

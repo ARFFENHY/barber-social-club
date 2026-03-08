@@ -19,9 +19,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
-  TrendingUp, CheckCircle, Eye, Phone, MessageCircle,
+  TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AdminScheduleSettings from "@/components/AdminScheduleSettings";
 
 type ViewMode = "day" | "week";
 
@@ -239,6 +240,7 @@ function AdminDashboard() {
         <TabsTrigger value="calendar"><CalendarIcon className="w-4 h-4 mr-1" />Calendario</TabsTrigger>
         <TabsTrigger value="stats"><BarChart3 className="w-4 h-4 mr-1" />Estadísticas</TabsTrigger>
         <TabsTrigger value="clients"><Users className="w-4 h-4 mr-1" />Clientes</TabsTrigger>
+        <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
       </TabsList>
 
       {/* ===================== CALENDARIO ===================== */}
@@ -446,6 +448,11 @@ function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+      </TabsContent>
+
+      {/* ===================== CONFIGURACIÓN ===================== */}
+      <TabsContent value="settings">
+        <AdminScheduleSettings />
       </TabsContent>
     </Tabs>
   );
