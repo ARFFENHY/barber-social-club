@@ -240,6 +240,7 @@ function AdminDashboard() {
         <TabsTrigger value="calendar"><CalendarIcon className="w-4 h-4 mr-1" />Calendario</TabsTrigger>
         <TabsTrigger value="stats"><BarChart3 className="w-4 h-4 mr-1" />Estadísticas</TabsTrigger>
         <TabsTrigger value="clients"><Users className="w-4 h-4 mr-1" />Clientes</TabsTrigger>
+        <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
       </TabsList>
 
       {/* ===================== CALENDARIO ===================== */}
