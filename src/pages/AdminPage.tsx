@@ -354,6 +354,7 @@ function AdminDashboard() {
           <TabsTrigger value="history"><History className="w-4 h-4 mr-1" />Historial</TabsTrigger>
           <TabsTrigger value="clients"><Users className="w-4 h-4 mr-1" />Clientes</TabsTrigger>
           <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
+          <TabsTrigger value="content"><Type className="w-4 h-4 mr-1" />Contenido</TabsTrigger>
         </TabsList>
 
         {/* ===================== CALENDARIO ===================== */}
