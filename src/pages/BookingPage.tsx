@@ -106,15 +106,9 @@ export default function BookingPage() {
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
     const day = date.getDay();
-    const barberDays = BARBER_DAYS[selectedBarber];
-    return barberDays ? barberDays.includes(day) : false;
-  };
-
-  const isBarberAvailableOnDay = (barberId: string, date?: Date) => {
-    if (!date) return true;
-    const day = date.getDay();
-    const days = BARBER_DAYS[barberId];
-    return days ? days.includes(day) : false;
+    const days = barberDays[selectedBarber];
+    // Barber must work that day AND shop must be open
+    return days ? days.includes(day) && !!scheduleBlocks[day] : false;
   };
 
   const handleBook = async () => {
