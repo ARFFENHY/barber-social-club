@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, Clock, Scissors, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import NotificationBell from "@/components/NotificationBell";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendiente", variant: "outline" },
   confirmed: { label: "Confirmada", variant: "default" },
   completed: { label: "Completada", variant: "secondary" },
   cancelled: { label: "Cancelada", variant: "destructive" },
