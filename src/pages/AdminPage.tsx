@@ -39,7 +39,6 @@ function AdminDashboard() {
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone").in("user_id", userIds);
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
       return data?.map(a => ({ ...a, profile: profileMap.get(a.user_id) || null })) || [];
-      if (error) throw error;
       return data;
     },
   });
