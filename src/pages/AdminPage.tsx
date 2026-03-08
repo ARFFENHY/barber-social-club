@@ -717,14 +717,17 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Inicio
-          </Link>
-          <div className="flex items-center gap-2">
-            <Scissors className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold text-gradient-gold">Panel Admin</span>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Inicio
+            </Link>
+            <div className="flex items-center gap-2">
+              <Scissors className="w-5 h-5 text-primary" />
+              <span className="font-display font-bold text-gradient-gold">Panel Admin</span>
+            </div>
           </div>
+          <NotificationBell />
         </div>
       </nav>
       <div className="container mx-auto px-4 pt-24 pb-12">
