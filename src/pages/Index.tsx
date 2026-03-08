@@ -1,8 +1,9 @@
-import { Scissors, Clock, Star, Users } from "lucide-react";
+import { Clock, Star, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useShopData";
+import bscLogo from "@/assets/bsc-logo.jpeg";
 
 export default function Index() {
   const { user, isAdmin, signOut } = useAuth();
@@ -14,8 +15,8 @@ export default function Index() {
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Scissors className="w-6 h-6 text-primary" />
-            <span className="font-display text-xl font-bold text-gradient-gold">BarberShop</span>
+            <img src={bscLogo} alt="BSC Logo" className="w-8 h-8 rounded-full object-cover" />
+            <span className="font-display text-xl font-bold text-gradient-gold">Barber Social Club</span>
           </Link>
           <div className="flex items-center gap-3">
             {user ? (
@@ -39,9 +40,13 @@ export default function Index() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-4">
-        <div className="container mx-auto text-center max-w-3xl animate-fade-in">
+      {/* Hero with background image */}
+      <section className="relative pt-16 min-h-[80vh] flex items-center justify-center px-4">
+        <div className="absolute inset-0 z-0">
+          <img src={bscLogo} alt="BSC Background" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+        </div>
+        <div className="relative z-10 container mx-auto text-center max-w-3xl animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
             <Star className="w-4 h-4" />
             Barbería Profesional
@@ -53,7 +58,7 @@ export default function Index() {
             Reserva tu turno en segundos. Cortes profesionales con Nestor y Nacho.
           </p>
           <Link to={user ? "/reservar" : "/auth"}>
-            <Button size="lg" className="text-lg px-8 py-6">
+            <Button size="lg" className="text-lg px-8 py-6 bg-gradient-gold hover:opacity-90 transition-opacity text-primary-foreground font-bold">
               Reservar Turno
             </Button>
           </Link>
@@ -104,8 +109,8 @@ export default function Index() {
       <footer className="py-8 px-4 border-t border-border text-center text-muted-foreground text-sm">
         <div className="container mx-auto">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Scissors className="w-4 h-4 text-primary" />
-            <span className="font-display text-gradient-gold">BarberShop</span>
+            <img src={bscLogo} alt="BSC Logo" className="w-5 h-5 rounded-full object-cover" />
+            <span className="font-display text-gradient-gold">Barber Social Club</span>
           </div>
           <p>© {new Date().getFullYear()} Todos los derechos reservados.</p>
         </div>
