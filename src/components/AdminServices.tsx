@@ -153,8 +153,8 @@ export default function AdminServices() {
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">{editing === "new" ? "Nuevo servicio" : "Editar servicio"}</DialogTitle>
-            <DialogDescription>Completá los datos del servicio.</DialogDescription>
+            <DialogTitle className="font-display text-gradient-gold">{editing === "new" ? "Nuevo servicio" : "Editar servicio"}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Completá los datos del servicio.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
