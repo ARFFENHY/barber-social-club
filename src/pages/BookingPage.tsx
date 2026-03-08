@@ -55,7 +55,24 @@ export default function BookingPage() {
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
 
-  // Filter barbers based on which ones work on the selected date
+  // Parse schedule from settings
+  const scheduleBlocks = useMemo(() => {
+    const blocks: Record<number, { start: string; end: string }[]> = {};
+    const schedules = settings?.working_hours?.schedules;
+    if (schedules) {
+      for (const sched of schedules) {
+        for (const day of sched.days) {
+          blocks[day] = sched.blocks.map((b: any) => ({ start: b.start, end: b.end }));
+        }
+      }
+    }
+    return blocks;
+  }, [settings]);
+
+  const barberDays: Record<string, number[]> = useMemo(() => {
+    return settings?.barber_schedules || {};
+  }, [settings]);
+
   const availableBarbers = useMemo(() => {
     if (!barbers) return [];
     return barbers;
@@ -65,10 +82,10 @@ export default function BookingPage() {
   const allSlots = useMemo(() => {
     if (!selectedDate) return [];
     const dayOfWeek = selectedDate.getDay();
-    const blocks = SCHEDULE_BLOCKS[dayOfWeek];
+    const blocks = scheduleBlocks[dayOfWeek];
     if (!blocks) return [];
     return generateTimeSlotsFromBlocks(blocks, slotDuration);
-  }, [selectedDate, slotDuration]);
+  }, [selectedDate, slotDuration, scheduleBlocks]);
 
   const bookedTimes = new Set(appointments?.map((a) => a.time.slice(0, 5)) || []);
   const blockedTimes = new Set<string>();
