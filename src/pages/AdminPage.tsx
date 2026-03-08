@@ -449,6 +449,11 @@ function AdminDashboard() {
           </Card>
         )}
       </TabsContent>
+
+      {/* ===================== CONFIGURACIÓN ===================== */}
+      <TabsContent value="settings">
+        <AdminScheduleSettings />
+      </TabsContent>
     </Tabs>
   );
 }
