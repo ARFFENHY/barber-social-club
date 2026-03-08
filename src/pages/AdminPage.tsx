@@ -505,7 +505,7 @@ function AdminDashboard() {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {apt.profile?.full_name || "Cliente"} · {(apt.services as any)?.name} · {(apt.barbers as any)?.name} · ${(apt.services as any)?.price?.toLocaleString("es-AR")}
+                            {(apt as any).profile?.full_name || "Cliente"} · {(apt.services as any)?.name} · {(apt.barbers as any)?.name} · ${(apt.services as any)?.price?.toLocaleString("es-AR")}
                           </p>
                         </div>
                         <AlertDialog>
