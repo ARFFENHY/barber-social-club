@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
 import AdminBlockedSlots from "@/components/AdminBlockedSlots";
 import AdminEditAppointment from "@/components/AdminEditAppointment";
+import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
 
@@ -480,10 +481,72 @@ function AdminDashboard() {
         <TabsContent value="history" className="space-y-6">
           <Card className="border-border">
             <CardHeader>
-              <CardTitle className="font-display flex items-center gap-2">
-                <History className="w-5 h-5" />
-                Historial de citas ({historyAppts.length})
-              </CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <CardTitle className="font-display flex items-center gap-2">
+                  <History className="w-5 h-5" />
+                  Historial de citas ({historyAppts.length})
+                </CardTitle>
+                <div className="flex gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30">
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Borrar semana
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Borrar historial de esta semana?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Se eliminarán todas las citas completadas y canceladas de los últimos 7 días. Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No</AlertDialogCancel>
+                        <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={async () => {
+                          const weekAgo = format(addDays(new Date(), -7), "yyyy-MM-dd");
+                          const toDelete = historyAppts.filter((a) => a.date >= weekAgo);
+                          for (const apt of toDelete) {
+                            await supabase.from("appointments").delete().eq("id", apt.id);
+                          }
+                          toast({ title: `${toDelete.length} citas eliminadas` });
+                          invalidateAll();
+                        }}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30">
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Borrar mes
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Borrar historial del último mes?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Se eliminarán todas las citas completadas y canceladas de los últimos 30 días. Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No</AlertDialogCancel>
+                        <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={async () => {
+                          const monthAgo = format(addDays(new Date(), -30), "yyyy-MM-dd");
+                          const toDelete = historyAppts.filter((a) => a.date >= monthAgo);
+                          for (const apt of toDelete) {
+                            await supabase.from("appointments").delete().eq("id", apt.id);
+                          }
+                          toast({ title: `${toDelete.length} citas eliminadas` });
+                          invalidateAll();
+                        }}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {historyAppts.length === 0 ? (
@@ -517,15 +580,11 @@ function AdminDashboard() {
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Eliminar del historial?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Se eliminará permanentemente este registro.
-                              </AlertDialogDescription>
+                              <AlertDialogDescription>Se eliminará permanentemente este registro.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>No</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteAppointment(apt)} className="bg-destructive text-destructive-foreground">
-                                Eliminar
-                              </AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteAppointment(apt)} className="bg-destructive text-destructive-foreground">Eliminar</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -716,14 +775,17 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Inicio
-          </Link>
-          <div className="flex items-center gap-2">
-            <Scissors className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold text-gradient-gold">Panel Admin</span>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Inicio
+            </Link>
+            <div className="flex items-center gap-2">
+              <Scissors className="w-5 h-5 text-primary" />
+              <span className="font-display font-bold text-gradient-gold">Panel Admin</span>
+            </div>
           </div>
+          <NotificationBell />
         </div>
       </nav>
       <div className="container mx-auto px-4 pt-24 pb-12">

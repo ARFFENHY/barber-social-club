@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, differenceInHours, parseISO } from "date-fns";
+import { format, differenceInHours } from "date-fns";
 import { es } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,13 +36,27 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   no_show: { label: "No asistió", variant: "outline" },
 };
 
-function getAppointmentDateTime(date: string, time: string): Date {
-  return new Date(`${date}T${time}`);
+function canModify(date: string, time: string): boolean {
+  const aptDate = new Date(`${date}T${time}`);
+  return differenceInHours(aptDate, new Date()) >= 24;
 }
 
-function canModify(date: string, time: string): boolean {
-  const aptDate = getAppointmentDateTime(date, time);
-  return differenceInHours(aptDate, new Date()) >= 24;
+async function notifyAdmins(appointmentId: string, message: string) {
+  // Get admin user IDs
+  const { data: adminRoles } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+  
+  if (adminRoles && adminRoles.length > 0) {
+    const notifications = adminRoles.map((r) => ({
+      user_id: r.user_id,
+      appointment_id: appointmentId,
+      type: "client_action",
+      message,
+    }));
+    await supabase.from("notifications").insert(notifications);
+  }
 }
 
 export default function MyAppointments() {
@@ -52,14 +66,19 @@ export default function MyAppointments() {
   const queryClient = useQueryClient();
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
-  const cancelAppointment = async (id: string) => {
+  const cancelAppointment = async (apt: any) => {
     const { error } = await supabase
       .from("appointments")
       .update({ status: "cancelled" })
-      .eq("id", id);
+      .eq("id", apt.id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      const clientName = user?.user_metadata?.full_name || "Un cliente";
+      await notifyAdmins(
+        apt.id,
+        `${clientName} canceló su cita del ${format(new Date(apt.date + "T00:00:00"), "d MMM", { locale: es })} a las ${apt.time.slice(0, 5)} (${(apt.services as any)?.name} con ${(apt.barbers as any)?.name}).`
+      );
       toast({ title: "Cita cancelada" });
       queryClient.invalidateQueries({ queryKey: ["my_appointments"] });
     }
@@ -125,38 +144,27 @@ export default function MyAppointments() {
                             </div>
                           </div>
 
-                          {/* Actions */}
                           {modifiable ? (
                             <div className="flex gap-2 mt-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1"
-                                onClick={() => setEditingAppointment(apt)}
-                              >
-                                <Pencil className="w-3.5 h-3.5 mr-1" />
-                                Modificar
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditingAppointment(apt)}>
+                                <Pencil className="w-3.5 h-3.5 mr-1" /> Modificar
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button variant="outline" size="sm" className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10">
-                                    <X className="w-3.5 h-3.5 mr-1" />
-                                    Cancelar
+                                    <X className="w-3.5 h-3.5 mr-1" /> Cancelar
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Se cancelará tu cita del {format(new Date(apt.date + "T00:00:00"), "d 'de' MMMM", { locale: es })} a las {apt.time.slice(0, 5)}. Esta acción no se puede deshacer.
+                                      Se cancelará tu cita del {format(new Date(apt.date + "T00:00:00"), "d 'de' MMMM", { locale: es })} a las {apt.time.slice(0, 5)}.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Volver</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => cancelAppointment(apt.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
+                                    <AlertDialogAction onClick={() => cancelAppointment(apt)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                       Sí, cancelar
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
@@ -168,20 +176,10 @@ export default function MyAppointments() {
                               <div className="flex items-start gap-2">
                                 <AlertTriangle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                                 <div className="text-sm">
-                                  <p className="text-muted-foreground">
-                                    No se puede modificar ni cancelar esta cita porque faltan menos de 24 horas.
-                                  </p>
-                                  <p className="text-muted-foreground mt-1">
-                                    Para cancelar, comunicáte con la barbería:
-                                  </p>
-                                  <a
-                                    href={WHATSAPP_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 mt-1.5 text-primary font-medium hover:underline"
-                                  >
-                                    <MessageCircle className="w-4 h-4" />
-                                    {PHONE_DISPLAY}
+                                  <p className="text-muted-foreground">No se puede modificar ni cancelar porque faltan menos de 24 horas.</p>
+                                  <p className="text-muted-foreground mt-1">Para cancelar, comunicáte con la barbería:</p>
+                                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-1.5 text-primary font-medium hover:underline">
+                                    <MessageCircle className="w-4 h-4" /> {PHONE_DISPLAY}
                                   </a>
                                 </div>
                               </div>

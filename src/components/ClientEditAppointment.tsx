@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useBarbers, useServices, useAppointments, useBlockedSlots, useShopSettings } from "@/hooks/useShopData";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -37,7 +38,24 @@ const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], d
   return slots;
 };
 
+async function notifyAdmins(appointmentId: string, message: string) {
+  const { data: adminRoles } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+  if (adminRoles && adminRoles.length > 0) {
+    const notifications = adminRoles.map((r) => ({
+      user_id: r.user_id,
+      appointment_id: appointmentId,
+      type: "client_action",
+      message,
+    }));
+    await supabase.from("notifications").insert(notifications);
+  }
+}
+
 export default function ClientEditAppointment({ appointment, open, onOpenChange }: Props) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: barbers } = useBarbers();
@@ -88,7 +106,7 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
 
     const bookedTimes = new Set(
       existingAppointments
-        ?.filter((a) => a.id !== appointment.id) // Exclude current appointment
+        ?.filter((a) => a.id !== appointment.id)
         .map((a) => a.time.slice(0, 5)) || []
     );
 
@@ -115,6 +133,7 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
       const newDate = format(date, "yyyy-MM-dd");
       const newTime = time + ":00";
       const selectedService = services?.find((s) => s.id === serviceId);
+      const selectedBarber = barbers?.find((b) => b.id === barberId);
 
       const { error } = await supabase
         .from("appointments")
@@ -128,6 +147,21 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
         .eq("id", appointment.id);
 
       if (error) throw error;
+
+      // Notify admins about the modification
+      const clientName = user?.user_metadata?.full_name || "Un cliente";
+      const changes: string[] = [];
+      if (newDate !== appointment.date) changes.push(`fecha: ${format(date, "d MMM yyyy", { locale: es })}`);
+      if (newTime !== appointment.time) changes.push(`hora: ${time}`);
+      if (barberId !== appointment.barber_id) changes.push(`barbero: ${selectedBarber?.name}`);
+      if (serviceId !== appointment.service_id) changes.push(`servicio: ${selectedService?.name}`);
+
+      if (changes.length > 0) {
+        await notifyAdmins(
+          appointment.id,
+          `${clientName} modificó su cita: ${changes.join(", ")}. Nueva fecha: ${format(date, "d MMM", { locale: es })} a las ${time} con ${selectedBarber?.name || (appointment.barbers as any)?.name}.`
+        );
+      }
 
       queryClient.invalidateQueries({ queryKey: ["my_appointments"] });
       toast({ title: "¡Cita modificada!", description: `Nueva fecha: ${format(date, "d MMM", { locale: es })} a las ${time}` });
@@ -144,13 +178,9 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Modificar cita</DialogTitle>
-          <DialogDescription>
-            Cambiá la fecha, horario, barbero o servicio de tu cita.
-          </DialogDescription>
+          <DialogDescription>Cambiá la fecha, horario, barbero o servicio de tu cita.</DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4">
-          {/* Service */}
           <div className="space-y-2">
             <Label>Servicio</Label>
             <Select value={serviceId} onValueChange={setServiceId}>
@@ -162,8 +192,6 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               </SelectContent>
             </Select>
           </div>
-
-          {/* Barber */}
           <div className="space-y-2">
             <Label>Barbero</Label>
             <Select value={barberId} onValueChange={(v) => { setBarberId(v); setDate(undefined); setTime(""); }}>
@@ -175,8 +203,6 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               </SelectContent>
             </Select>
           </div>
-
-          {/* Date */}
           <div className="space-y-2">
             <Label>Fecha</Label>
             <Popover>
@@ -188,8 +214,7 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  mode="single"
-                  selected={date}
+                  mode="single" selected={date}
                   onSelect={(d) => { setDate(d); setTime(""); }}
                   disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0)) || !isWorkingDay(d)}
                   className="p-3 pointer-events-auto"
@@ -197,8 +222,6 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               </PopoverContent>
             </Popover>
           </div>
-
-          {/* Time */}
           {date && (
             <div className="space-y-2">
               <Label>Hora</Label>
@@ -207,16 +230,10 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               ) : (
                 <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
                   {availableSlots.map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => setTime(slot)}
-                      className={cn(
-                        "py-1.5 px-2 rounded-lg text-sm font-medium border transition-all",
-                        time === slot
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
+                    <button key={slot} onClick={() => setTime(slot)}
+                      className={cn("py-1.5 px-2 rounded-lg text-sm font-medium border transition-all",
+                        time === slot ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"
+                      )}>
                       {slot}
                     </button>
                   ))}
@@ -224,7 +241,6 @@ export default function ClientEditAppointment({ appointment, open, onOpenChange 
               )}
             </div>
           )}
-
           <div className="flex gap-2 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button className="flex-1" onClick={handleSave} disabled={saving || !date || !time}>
