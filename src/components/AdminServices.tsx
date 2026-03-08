@@ -122,7 +122,7 @@ export default function AdminServices() {
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(s)} className="text-primary hover:text-primary hover:bg-primary/10">
                     <Edit className="w-4 h-4" />
                   </Button>
                   <AlertDialog>
