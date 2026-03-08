@@ -29,10 +29,16 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, barbers(name), services(name, price, duration_minutes), profiles!appointments_user_id_fkey(full_name, phone)")
+        .select("*, barbers(name), services(name, price, duration_minutes)")
         .eq("date", dateStr)
         .neq("status", "cancelled")
         .order("time");
+      if (error) throw error;
+      // Fetch profiles for each appointment
+      const userIds = [...new Set(data?.map(a => a.user_id) || [])];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone").in("user_id", userIds);
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      return data?.map(a => ({ ...a, profile: profileMap.get(a.user_id) || null })) || [];
       if (error) throw error;
       return data;
     },
