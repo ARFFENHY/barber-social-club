@@ -19,9 +19,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
-  TrendingUp, CheckCircle, Eye, Phone, MessageCircle,
+  TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AdminScheduleSettings from "@/components/AdminScheduleSettings";
 
 type ViewMode = "day" | "week";
 
