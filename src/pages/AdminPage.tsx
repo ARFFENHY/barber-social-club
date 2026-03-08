@@ -142,11 +142,29 @@ function AdminDashboard() {
     },
   });
 
+  // Earnings data
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const thisWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const thisMonthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
+
+  const { data: allEarnings } = useQuery({
+    queryKey: ["admin_earnings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("earnings")
+        .select("*, barbers(name)")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin_week_appointments"] });
     queryClient.invalidateQueries({ queryKey: ["admin_all_appointments"] });
     queryClient.invalidateQueries({ queryKey: ["admin_client_history"] });
     queryClient.invalidateQueries({ queryKey: ["admin_appointment_counts"] });
+    queryClient.invalidateQueries({ queryKey: ["admin_earnings"] });
   };
 
   const sendNotification = async (userId: string, appointmentId: string, type: string, message: string) => {
