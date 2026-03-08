@@ -110,14 +110,14 @@ export default function AdminServices() {
             {services?.map((s) => (
               <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <p className="font-semibold">{s.name}</p>
+                  <p className="font-semibold text-foreground">{s.name}</p>
                   {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />${s.price.toLocaleString("es-AR")}
+                      <DollarSign className="w-3 h-3 text-primary" />${s.price.toLocaleString("es-AR")}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />{s.duration_minutes} min
+                      <Clock className="w-3 h-3 text-primary" />{s.duration_minutes} min
                     </span>
                   </div>
                 </div>
