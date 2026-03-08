@@ -1,4 +1,5 @@
-import { format } from "date-fns";
+import { useState } from "react";
+import { format, differenceInHours, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,9 +9,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, Clock, Scissors, X } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Scissors, X, Pencil, MessageCircle, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import NotificationBell from "@/components/NotificationBell";
+import ClientEditAppointment from "@/components/ClientEditAppointment";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+const WHATSAPP_URL = "https://wa.me/5491170055858";
+const PHONE_DISPLAY = "11 7005-5858";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pendiente", variant: "outline" },
@@ -20,11 +36,21 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
   no_show: { label: "No asistió", variant: "outline" },
 };
 
+function getAppointmentDateTime(date: string, time: string): Date {
+  return new Date(`${date}T${time}`);
+}
+
+function canModify(date: string, time: string): boolean {
+  const aptDate = getAppointmentDateTime(date, time);
+  return differenceInHours(aptDate, new Date()) >= 24;
+}
+
 export default function MyAppointments() {
   const { user } = useAuth();
   const { data: appointments, isLoading } = useMyAppointments(user?.id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
   const cancelAppointment = async (id: string) => {
     const { error } = await supabase
@@ -39,8 +65,13 @@ export default function MyAppointments() {
     }
   };
 
-  const upcoming = appointments?.filter((a) => a.status === "confirmed" && a.date >= format(new Date(), "yyyy-MM-dd")) || [];
-  const past = appointments?.filter((a) => a.status !== "confirmed" || a.date < format(new Date(), "yyyy-MM-dd")) || [];
+  const today = format(new Date(), "yyyy-MM-dd");
+  const upcoming = appointments?.filter(
+    (a) => (a.status === "confirmed" || a.status === "pending") && a.date >= today
+  ) || [];
+  const past = appointments?.filter(
+    (a) => a.status === "completed" || a.status === "cancelled" || a.status === "no_show" || a.date < today
+  ) || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,28 +106,91 @@ export default function MyAppointments() {
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Próximas citas</h2>
                 <div className="space-y-3">
-                  {upcoming.map((apt) => (
-                    <Card key={apt.id} className="border-border hover:border-primary/30 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">{(apt.services as any)?.name}</h3>
-                              <Badge variant={statusLabels[apt.status]?.variant}>{statusLabels[apt.status]?.label}</Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{format(new Date(apt.date + "T00:00:00"), "d MMM yyyy", { locale: es })}</span>
-                              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{apt.time.slice(0, 5)}</span>
-                              <span className="flex items-center gap-1"><Scissors className="w-3.5 h-3.5" />{(apt.barbers as any)?.name}</span>
+                  {upcoming.map((apt) => {
+                    const modifiable = canModify(apt.date, apt.time);
+                    return (
+                      <Card key={apt.id} className="border-border hover:border-primary/30 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold">{(apt.services as any)?.name}</h3>
+                                <Badge variant={statusLabels[apt.status]?.variant}>{statusLabels[apt.status]?.label}</Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{format(new Date(apt.date + "T00:00:00"), "d MMM yyyy", { locale: es })}</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{apt.time.slice(0, 5)}</span>
+                                <span className="flex items-center gap-1"><Scissors className="w-3.5 h-3.5" />{(apt.barbers as any)?.name}</span>
+                              </div>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelAppointment(apt.id)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+
+                          {/* Actions */}
+                          {modifiable ? (
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => setEditingAppointment(apt)}
+                              >
+                                <Pencil className="w-3.5 h-3.5 mr-1" />
+                                Modificar
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10">
+                                    <X className="w-3.5 h-3.5 mr-1" />
+                                    Cancelar
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Se cancelará tu cita del {format(new Date(apt.date + "T00:00:00"), "d 'de' MMMM", { locale: es })} a las {apt.time.slice(0, 5)}. Esta acción no se puede deshacer.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Volver</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => cancelAppointment(apt.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Sí, cancelar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          ) : (
+                            <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
+                              <div className="flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                                <div className="text-sm">
+                                  <p className="text-muted-foreground">
+                                    No se puede modificar ni cancelar esta cita porque faltan menos de 24 horas.
+                                  </p>
+                                  <p className="text-muted-foreground mt-1">
+                                    Para cancelar, comunicáte con la barbería:
+                                  </p>
+                                  <a
+                                    href={WHATSAPP_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 mt-1.5 text-primary font-medium hover:underline"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                    {PHONE_DISPLAY}
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -108,11 +202,11 @@ export default function MyAppointments() {
                   {past.map((apt) => (
                     <Card key={apt.id} className="border-border opacity-60">
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-semibold">{(apt.services as any)?.name}</h3>
                           <Badge variant={statusLabels[apt.status]?.variant}>{statusLabels[apt.status]?.label}</Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                           <span>{format(new Date(apt.date + "T00:00:00"), "d MMM yyyy", { locale: es })}</span>
                           <span>{apt.time.slice(0, 5)}</span>
                           <span>{(apt.barbers as any)?.name}</span>
@@ -126,6 +220,14 @@ export default function MyAppointments() {
           </>
         )}
       </div>
+
+      {editingAppointment && (
+        <ClientEditAppointment
+          appointment={editingAppointment}
+          open={!!editingAppointment}
+          onOpenChange={(open) => { if (!open) setEditingAppointment(null); }}
+        />
+      )}
     </div>
   );
 }
