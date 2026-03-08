@@ -14,23 +14,21 @@ import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-// Barber IDs
-const NACHO_ID = "12a62650-13cd-4c83-8714-86ef19a72556";
-const NESTOR_ID = "84aac2e4-615e-45c5-9a84-8c4400813489";
-
-// Barber available days (JS day: 0=Sun, 1=Mon, ..., 6=Sat)
-const BARBER_DAYS: Record<string, number[]> = {
-  [NACHO_ID]: [2, 3, 4, 5, 6],  // Tue-Sat
-  [NESTOR_ID]: [5, 6],           // Fri-Sat
-};
-
-// Schedule blocks by day
-const SCHEDULE_BLOCKS: Record<number, { start: string; end: string }[]> = {
-  2: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  3: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  4: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
-  5: [{ start: "10:00", end: "20:00" }],
-  6: [{ start: "10:00", end: "20:00" }],
+const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
+  const slots: string[] = [];
+  for (const block of blocks) {
+    const [sh, sm] = block.start.split(":").map(Number);
+    const [eh, em] = block.end.split(":").map(Number);
+    let current = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    while (current + duration <= endMin) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      slots.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
+      current += duration;
+    }
+  }
+  return slots;
 };
 
 const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
