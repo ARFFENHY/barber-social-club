@@ -213,8 +213,9 @@ export default function BookingPage() {
             <h2 className="text-2xl font-display font-bold mb-6">Elegí tu barbero</h2>
             <div className="grid grid-cols-2 gap-4">
               {availableBarbers?.map((barber) => {
-                const days = BARBER_DAYS[barber.id];
-                const dayLabels = days?.includes(2) && days?.includes(5) ? "Mar a Sáb" : "Vie y Sáb";
+                const days = barberDays[barber.id] || [];
+                const DAY_NAMES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+                const dayLabels = days.map((d: number) => DAY_NAMES[d]).join(", ");
                 return (
                   <button
                     key={barber.id}
