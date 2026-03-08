@@ -485,6 +485,46 @@ function AdminDashboard() {
             </Card>
           </div>
 
+          {/* Earnings per barber */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="font-display flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                Ingresos por barbero
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {barbers?.map((b) => {
+                const barberEarnings = allEarnings?.filter((e) => e.barber_id === b.id) || [];
+                const todayTotal = barberEarnings.filter((e) => e.date === todayStr).reduce((s, e) => s + Number(e.amount), 0);
+                const weekTotal = barberEarnings.filter((e) => e.date >= thisWeekStart).reduce((s, e) => s + Number(e.amount), 0);
+                const monthTotal = barberEarnings.filter((e) => e.date >= thisMonthStart).reduce((s, e) => s + Number(e.amount), 0);
+                return (
+                  <div key={b.id} className="mb-6 last:mb-0">
+                    <h4 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+                      <Scissors className="w-4 h-4 text-primary" />
+                      {b.name}
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${todayTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Hoy</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${weekTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Semana</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${monthTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Mes</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="font-display">Reservas por barbero (semana)</CardTitle>
