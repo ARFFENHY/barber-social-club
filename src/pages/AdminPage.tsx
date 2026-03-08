@@ -81,7 +81,7 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, barbers(name), services(name, price), profiles!appointments_user_id_fkey(full_name)")
+        .select("*, barbers(name), services(name, price)")
         .order("date", { ascending: false })
         .limit(100);
       if (error) throw error;
