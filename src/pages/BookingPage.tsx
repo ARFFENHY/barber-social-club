@@ -31,22 +31,7 @@ const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], d
   return slots;
 };
 
-const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
-  const slots: string[] = [];
-  for (const block of blocks) {
-    const [sh, sm] = block.start.split(":").map(Number);
-    const [eh, em] = block.end.split(":").map(Number);
-    let current = sh * 60 + sm;
-    const endMin = eh * 60 + em;
-    while (current + duration <= endMin) {
-      const h = Math.floor(current / 60);
-      const m = current % 60;
-      slots.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
-      current += duration;
-    }
-  }
-  return slots;
-};
+
 
 export default function BookingPage() {
   const { user } = useAuth();
