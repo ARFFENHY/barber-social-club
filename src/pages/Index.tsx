@@ -58,7 +58,7 @@ export default function Index() {
             Reserva tu turno en segundos. Cortes profesionales con Nestor y Nacho.
           </p>
           <Link to={user ? "/reservar" : "/auth"}>
-            <Button size="lg" className="text-lg px-8 py-6 bg-gradient-gold hover:opacity-90 transition-opacity text-primary-foreground font-bold">
+            <Button size="lg" className="text-lg px-8 py-6">
               Reservar Turno
             </Button>
           </Link>
