@@ -164,6 +164,16 @@ function AdminDashboard() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    // Auto-insert earning when completed
+    if (status === "completed") {
+      const amount = (apt.services as any)?.price || apt.payment_amount || 0;
+      await supabase.from("earnings").insert({
+        barber_id: apt.barber_id,
+        appointment_id: apt.id,
+        amount,
+        date: apt.date,
+      });
+    }
     const statusLabel = STATUS_CONFIG[status]?.label || status;
     await sendNotification(
       apt.user_id, apt.id, `appointment_${status}`,
