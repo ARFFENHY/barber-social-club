@@ -1,9 +1,21 @@
-import { Clock, Star, Users } from "lucide-react";
+import { Clock, Star, Users, MapPin, Phone, Instagram, MessageCircle, Scissors, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useShopData";
 import bscLogo from "@/assets/bsc-logo.jpeg";
+
+const WHATSAPP_URL = "https://wa.me/5491170055858";
+const INSTAGRAM_URL = "https://www.instagram.com/barber.social.club";
+
+const galleryImages = [
+  "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1585747860019-8c8a54e6a6d3?w=400&h=400&fit=crop",
+  "https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=400&h=400&fit=crop",
+];
 
 export default function Index() {
   const { user, isAdmin, signOut } = useAuth();
@@ -12,18 +24,25 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <img src={bscLogo} alt="BSC Logo" className="w-8 h-8 rounded-full object-cover" />
-            <span className="font-display text-xl font-bold text-gradient-gold">Barber Social Club</span>
+            <span className="font-display text-xl font-bold text-gradient-gold">BSC</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            <a href="#inicio" className="text-muted-foreground hover:text-foreground transition-colors">Inicio</a>
+            <a href="#servicios" className="text-muted-foreground hover:text-foreground transition-colors">Servicios</a>
+            <a href="#nosotros" className="text-muted-foreground hover:text-foreground transition-colors">Nosotros</a>
+            <a href="#galeria" className="text-muted-foreground hover:text-foreground transition-colors">Galería</a>
+            <a href="#contacto" className="text-muted-foreground hover:text-foreground transition-colors">Contacto</a>
+          </div>
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 {isAdmin && (
                   <Link to="/admin">
-                    <Button variant="outline" size="sm">Panel Admin</Button>
+                    <Button variant="outline" size="sm">Admin</Button>
                   </Link>
                 )}
                 <Link to="/mis-citas">
@@ -40,28 +59,41 @@ export default function Index() {
         </div>
       </nav>
 
-      {/* Hero with background image */}
-      <section className="relative pt-16 min-h-[80vh] flex items-center justify-center px-4">
+      {/* Hero */}
+      <section id="inicio" className="relative pt-16 min-h-[85vh] flex items-center justify-center px-4">
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-background">
           <img src={bscLogo} alt="BSC Background" className="w-[500px] md:w-[600px] h-auto object-contain opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/80" />
         </div>
         <div className="relative z-10 container mx-auto text-center max-w-3xl animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <Star className="w-4 h-4" />
+            <Scissors className="w-4 h-4" />
             Barbería Profesional
           </div>
           <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 text-gradient-gold leading-tight">
             Tu Estilo, Nuestro Arte
           </h1>
-          <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            Reserva tu turno en segundos. Cortes profesionales con Nestor y Nacho.
+          <p className="text-lg text-muted-foreground mb-4 max-w-xl mx-auto">
+            Reservá tu turno en segundos. Cortes profesionales con Nacho y Nestor.
           </p>
-          <Link to={user ? "/reservar" : "/auth"}>
-            <Button size="lg" className="text-lg px-8 py-6">
-              Reservar Turno
-            </Button>
-          </Link>
+          <p className="text-sm text-muted-foreground mb-8">
+            <MapPin className="w-4 h-4 inline mr-1" />
+            Buenos Aires 5075 entre Lavalle y General Paz
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to={user ? "/reservar" : "/auth"}>
+              <Button size="lg" className="text-lg px-8 py-6 w-full sm:w-auto">
+                <Calendar className="w-5 h-5 mr-2" />
+                Reservar Turno
+              </Button>
+            </Link>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 w-full sm:w-auto">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                WhatsApp
+              </Button>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -70,9 +102,9 @@ export default function Index() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: Clock, title: "Reserva Rápida", desc: "Elige barbero, servicio y horario en menos de 1 minuto." },
-              { icon: Users, title: "Barberos Expertos", desc: "Nestor y Nacho, profesionales con años de experiencia." },
-              { icon: Star, title: "Sin Esperas", desc: "Sistema inteligente que evita reservas duplicadas." },
+              { icon: Clock, title: "Reserva Rápida", desc: "Elegí barbero, servicio y horario en menos de 1 minuto." },
+              { icon: Users, title: "Barberos Expertos", desc: "Nacho y Nestor, profesionales con años de experiencia." },
+              { icon: Star, title: "Sin Esperas", desc: "Confirmación automática. Llegás y te atendemos." },
             ].map((f, i) => (
               <div key={i} className="p-6 rounded-xl bg-card border border-border hover:border-gold transition-colors animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
                 <f.icon className="w-10 h-10 text-primary mb-4" />
@@ -86,7 +118,7 @@ export default function Index() {
 
       {/* Services */}
       {services && services.length > 0 && (
-        <section className="py-16 px-4 border-t border-border">
+        <section id="servicios" className="py-16 px-4 border-t border-border">
           <div className="container mx-auto">
             <h2 className="text-3xl font-display font-bold text-center mb-10 text-gradient-gold">Nuestros Servicios</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -95,15 +127,120 @@ export default function Index() {
                   <h3 className="font-display font-semibold text-lg mb-1">{service.name}</h3>
                   <p className="text-muted-foreground text-sm mb-3">{service.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-primary font-bold text-xl">${service.price}</span>
+                    <span className="text-primary font-bold text-xl">${service.price.toLocaleString("es-AR")}</span>
                     <span className="text-muted-foreground text-xs">{service.duration_minutes} min</span>
                   </div>
                 </div>
               ))}
             </div>
+            <div className="text-center mt-8">
+              <Link to={user ? "/reservar" : "/auth"}>
+                <Button size="lg">Reservar Turno</Button>
+              </Link>
+            </div>
           </div>
         </section>
       )}
+
+      {/* About */}
+      <section id="nosotros" className="py-16 px-4 border-t border-border">
+        <div className="container mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl font-display font-bold mb-6 text-gradient-gold">Sobre Nosotros</h2>
+          <div className="flex justify-center mb-6">
+            <img src={bscLogo} alt="BSC Logo" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+          </div>
+          <p className="text-muted-foreground text-lg leading-relaxed mb-6">
+            <strong className="text-foreground">Barber Social Club</strong> es un espacio moderno y profesional especializado en cortes masculinos y cuidado de la barba. Nuestro equipo, formado por Nacho y Nestor, combina técnica, estilo y atención personalizada para que cada cliente salga con el look que busca.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4 mt-8">
+            <div className="p-4 rounded-xl bg-card border border-border">
+              <h4 className="font-display font-semibold text-primary mb-2">Martes a Jueves</h4>
+              <p className="text-muted-foreground text-sm">10:00 a 13:00 · 16:00 a 20:00</p>
+              <p className="text-muted-foreground text-xs mt-1">Atiende: Nacho</p>
+            </div>
+            <div className="p-4 rounded-xl bg-card border border-border">
+              <h4 className="font-display font-semibold text-primary mb-2">Viernes y Sábado</h4>
+              <p className="text-muted-foreground text-sm">10:00 a 20:00</p>
+              <p className="text-muted-foreground text-xs mt-1">Atienden: Nacho y Nestor</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section id="galeria" className="py-16 px-4 border-t border-border">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-display font-bold text-center mb-4 text-gradient-gold">Galería</h2>
+          <p className="text-center text-muted-foreground mb-8">
+            Seguinos en{" "}
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              @barber.social.club
+            </a>
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {galleryImages.map((img, i) => (
+              <a
+                key={i}
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="aspect-square rounded-lg overflow-hidden border border-border hover:glow-gold transition-all"
+              >
+                <img src={img} alt={`Trabajo de barbería ${i + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contacto" className="py-16 px-4 border-t border-border">
+        <div className="container mx-auto max-w-2xl">
+          <h2 className="text-3xl font-display font-bold text-center mb-10 text-gradient-gold">Contacto</h2>
+          <div className="grid gap-4">
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border">
+              <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <p className="font-medium">Dirección</p>
+                <p className="text-muted-foreground text-sm">Buenos Aires 5075 entre Lavalle y General Paz</p>
+              </div>
+            </div>
+            <a href="tel:+5491170055858" className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-gold transition-colors">
+              <Phone className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <p className="font-medium">Teléfono / WhatsApp</p>
+                <p className="text-muted-foreground text-sm">11 7005-5858</p>
+              </div>
+            </a>
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-gold transition-colors">
+              <Instagram className="w-6 h-6 text-primary flex-shrink-0" />
+              <div>
+                <p className="font-medium">Instagram</p>
+                <p className="text-muted-foreground text-sm">@barber.social.club</p>
+              </div>
+            </a>
+          </div>
+          <div className="text-center mt-8">
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="text-lg px-8 py-6">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Escribinos por WhatsApp
+              </Button>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* WhatsApp floating button */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+        aria-label="Contactar por WhatsApp"
+      >
+        <MessageCircle className="w-7 h-7 text-white" />
+      </a>
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border text-center text-muted-foreground text-sm">
@@ -112,7 +249,8 @@ export default function Index() {
             <img src={bscLogo} alt="BSC Logo" className="w-5 h-5 rounded-full object-cover" />
             <span className="font-display text-gradient-gold">Barber Social Club</span>
           </div>
-          <p>© {new Date().getFullYear()} Todos los derechos reservados.</p>
+          <p>Buenos Aires 5075 entre Lavalle y General Paz</p>
+          <p className="mt-1">© {new Date().getFullYear()} Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>
