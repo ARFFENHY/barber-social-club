@@ -91,10 +91,10 @@ export default function AdminServices() {
   };
 
   return (
-    <Card className="border-border">
+    <Card className="border-border bg-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="font-display">Gestión de Servicios</CardTitle>
+          <CardTitle className="font-display text-gradient-gold">Gestión de Servicios</CardTitle>
           <Button size="sm" onClick={openNew}>
             <Plus className="w-4 h-4 mr-1" /> Nuevo
           </Button>
@@ -110,19 +110,19 @@ export default function AdminServices() {
             {services?.map((s) => (
               <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <p className="font-semibold">{s.name}</p>
+                  <p className="font-semibold text-foreground">{s.name}</p>
                   {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />${s.price.toLocaleString("es-AR")}
+                      <DollarSign className="w-3 h-3 text-primary" />${s.price.toLocaleString("es-AR")}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />{s.duration_minutes} min
+                      <Clock className="w-3 h-3 text-primary" />{s.duration_minutes} min
                     </span>
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(s)} className="text-primary hover:text-primary hover:bg-primary/10">
                     <Edit className="w-4 h-4" />
                   </Button>
                   <AlertDialog>
@@ -153,8 +153,8 @@ export default function AdminServices() {
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">{editing === "new" ? "Nuevo servicio" : "Editar servicio"}</DialogTitle>
-            <DialogDescription>Completá los datos del servicio.</DialogDescription>
+            <DialogTitle className="font-display text-gradient-gold">{editing === "new" ? "Nuevo servicio" : "Editar servicio"}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Completá los datos del servicio.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
