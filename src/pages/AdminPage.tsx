@@ -158,8 +158,8 @@ function AdminDashboard() {
                       <Badge variant={apt.status === "confirmed" ? "default" : "secondary"}>{apt.status === "confirmed" ? "Confirmada" : apt.status}</Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Cliente: {(apt as any).profiles?.full_name || "—"} · Barbero: {(apt.barbers as any)?.name}
-                      {(apt as any).profiles?.phone && ` · Tel: ${(apt as any).profiles.phone}`}
+                      Cliente: {(apt as any).profile?.full_name || "—"} · Barbero: {(apt.barbers as any)?.name}
+                      {(apt as any).profile?.phone && ` · Tel: ${(apt as any).profile.phone}`}
                     </div>
                   </div>
                   <div className="flex gap-1">
