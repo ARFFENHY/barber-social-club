@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, startOfMonth, addDays, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
