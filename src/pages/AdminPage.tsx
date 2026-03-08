@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
 import AdminBlockedSlots from "@/components/AdminBlockedSlots";
 import AdminEditAppointment from "@/components/AdminEditAppointment";
+import AdminServices from "@/components/AdminServices";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
