@@ -131,6 +131,20 @@ export default function BookingPage() {
         }
         return;
       }
+
+      // Notify admins about new booking
+      const clientName = user?.user_metadata?.full_name || "Un cliente";
+      const barberName = barbers?.find((b) => b.id === selectedBarber)?.name || "";
+      const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      if (adminRoles && adminRoles.length > 0) {
+        const notifications = adminRoles.map((r) => ({
+          user_id: r.user_id,
+          type: "client_action",
+          message: `${clientName} reservó un turno: ${selectedServiceData?.name} el ${format(selectedDate, "d MMM", { locale: es })} a las ${selectedTime} con ${barberName}.`,
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
+
       toast({ title: "¡Turno reservado!", description: `${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} a las ${selectedTime}` });
       navigate("/mis-citas");
     } catch (error: any) {

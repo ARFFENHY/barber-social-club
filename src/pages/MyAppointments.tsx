@@ -42,15 +42,11 @@ function canModify(date: string, time: string): boolean {
 }
 
 async function notifyAdmins(appointmentId: string, message: string) {
-  // Get admin user IDs
-  const { data: adminRoles } = await supabase
-    .from("user_roles")
-    .select("user_id")
-    .eq("role", "admin");
+  const { data: adminIds } = await supabase.rpc("get_admin_user_ids");
   
-  if (adminRoles && adminRoles.length > 0) {
-    const notifications = adminRoles.map((r) => ({
-      user_id: r.user_id,
+  if (adminIds && adminIds.length > 0) {
+    const notifications = adminIds.map((uid: string) => ({
+      user_id: uid,
       appointment_id: appointmentId,
       type: "client_action",
       message,

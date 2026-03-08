@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, startOfMonth, addDays, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
   TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings, Edit, Trash2, History,
-  UserCheck, RefreshCw,
+  UserCheck, RefreshCw, DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
@@ -142,11 +142,29 @@ function AdminDashboard() {
     },
   });
 
+  // Earnings data
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const thisWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const thisMonthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
+
+  const { data: allEarnings } = useQuery({
+    queryKey: ["admin_earnings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("earnings")
+        .select("*, barbers(name)")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin_week_appointments"] });
     queryClient.invalidateQueries({ queryKey: ["admin_all_appointments"] });
     queryClient.invalidateQueries({ queryKey: ["admin_client_history"] });
     queryClient.invalidateQueries({ queryKey: ["admin_appointment_counts"] });
+    queryClient.invalidateQueries({ queryKey: ["admin_earnings"] });
   };
 
   const sendNotification = async (userId: string, appointmentId: string, type: string, message: string) => {
@@ -163,6 +181,16 @@ function AdminDashboard() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
+    }
+    // Auto-insert earning when completed
+    if (status === "completed") {
+      const amount = (apt.services as any)?.price || apt.payment_amount || 0;
+      await supabase.from("earnings").insert({
+        barber_id: apt.barber_id,
+        appointment_id: apt.id,
+        amount,
+        date: apt.date,
+      });
     }
     const statusLabel = STATUS_CONFIG[status]?.label || status;
     await sendNotification(
@@ -456,6 +484,46 @@ function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Earnings per barber */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="font-display flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                Ingresos por barbero
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {barbers?.map((b) => {
+                const barberEarnings = allEarnings?.filter((e) => e.barber_id === b.id) || [];
+                const todayTotal = barberEarnings.filter((e) => e.date === todayStr).reduce((s, e) => s + Number(e.amount), 0);
+                const weekTotal = barberEarnings.filter((e) => e.date >= thisWeekStart).reduce((s, e) => s + Number(e.amount), 0);
+                const monthTotal = barberEarnings.filter((e) => e.date >= thisMonthStart).reduce((s, e) => s + Number(e.amount), 0);
+                return (
+                  <div key={b.id} className="mb-6 last:mb-0">
+                    <h4 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+                      <Scissors className="w-4 h-4 text-primary" />
+                      {b.name}
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${todayTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Hoy</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${weekTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Semana</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
+                        <p className="text-xl font-bold text-primary">${monthTotal.toLocaleString("es-AR")}</p>
+                        <p className="text-xs text-muted-foreground">Mes</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
 
           <Card className="border-border">
             <CardHeader>

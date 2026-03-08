@@ -39,13 +39,10 @@ const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], d
 };
 
 async function notifyAdmins(appointmentId: string, message: string) {
-  const { data: adminRoles } = await supabase
-    .from("user_roles")
-    .select("user_id")
-    .eq("role", "admin");
-  if (adminRoles && adminRoles.length > 0) {
-    const notifications = adminRoles.map((r) => ({
-      user_id: r.user_id,
+  const { data: adminIds } = await supabase.rpc("get_admin_user_ids");
+  if (adminIds && adminIds.length > 0) {
+    const notifications = adminIds.map((uid: string) => ({
+      user_id: uid,
       appointment_id: appointmentId,
       type: "client_action",
       message,

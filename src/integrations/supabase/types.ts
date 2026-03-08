@@ -139,6 +139,51 @@ export type Database = {
           },
         ]
       }
+      earnings: {
+        Row: {
+          amount: number
+          appointment_id: string
+          barber_id: string
+          created_at: string
+          date: string
+          id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          appointment_id: string
+          barber_id: string
+          created_at?: string
+          date: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string
+          barber_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "barbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           appointment_id: string | null
@@ -284,6 +329,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_user_ids: { Args: never; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
