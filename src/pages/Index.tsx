@@ -42,9 +42,9 @@ export default function Index() {
 
       {/* Hero with background image */}
       <section className="relative pt-16 min-h-[80vh] flex items-center justify-center px-4">
-        <div className="absolute inset-0 z-0">
-          <img src={bscLogo} alt="BSC Background" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 z-0 flex items-center justify-center bg-background">
+          <img src={bscLogo} alt="BSC Background" className="w-[500px] md:w-[600px] h-auto object-contain opacity-40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/80" />
         </div>
         <div className="relative z-10 container mx-auto text-center max-w-3xl animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
