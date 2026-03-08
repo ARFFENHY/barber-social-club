@@ -1,4 +1,5 @@
-import { Clock, Star, Users, MapPin, Phone, Instagram, MessageCircle, Scissors, Calendar } from "lucide-react";
+import { useState } from "react";
+import { Clock, Star, Users, MapPin, Phone, Instagram, MessageCircle, Scissors, Calendar, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,9 +18,18 @@ const galleryImages = [
   "https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=400&h=400&fit=crop",
 ];
 
+const NAV_LINKS = [
+  { href: "#inicio", label: "Inicio" },
+  { href: "#servicios", label: "Servicios" },
+  { href: "#nosotros", label: "Nosotros" },
+  { href: "#galeria", label: "Galería" },
+  { href: "#contacto", label: "Contacto" },
+];
+
 export default function Index() {
   const { user, isAdmin, signOut } = useAuth();
   const { data: services } = useServices();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,32 +41,74 @@ export default function Index() {
             <span className="font-display text-xl font-bold text-gradient-gold">BSC</span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#inicio" className="text-muted-foreground hover:text-foreground transition-colors">Inicio</a>
-            <a href="#servicios" className="text-muted-foreground hover:text-foreground transition-colors">Servicios</a>
-            <a href="#nosotros" className="text-muted-foreground hover:text-foreground transition-colors">Nosotros</a>
-            <a href="#galeria" className="text-muted-foreground hover:text-foreground transition-colors">Galería</a>
-            <a href="#contacto" className="text-muted-foreground hover:text-foreground transition-colors">Contacto</a>
+            {NAV_LINKS.map((l) => (
+              <a key={l.href} href={l.href} className="text-muted-foreground hover:text-foreground transition-colors">{l.label}</a>
+            ))}
           </div>
           <div className="flex items-center gap-2">
             {user ? (
               <>
                 {isAdmin && (
-                  <Link to="/admin">
+                  <Link to="/admin" className="hidden sm:inline-flex">
                     <Button variant="outline" size="sm">Admin</Button>
                   </Link>
                 )}
-                <Link to="/mis-citas">
+                <Link to="/mis-citas" className="hidden sm:inline-flex">
                   <Button variant="ghost" size="sm">Mis Citas</Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={signOut}>Salir</Button>
+                <Button variant="ghost" size="sm" onClick={signOut} className="hidden sm:inline-flex">Salir</Button>
               </>
             ) : (
-              <Link to="/auth">
+              <Link to="/auth" className="hidden sm:inline-flex">
                 <Button size="sm">Iniciar Sesión</Button>
               </Link>
             )}
+            <button
+              className="md:hidden p-2 text-foreground"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Menú"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md animate-fade-in">
+            <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-2 text-foreground hover:text-primary transition-colors font-medium"
+                >
+                  {l.label}
+                </a>
+              ))}
+              <div className="border-t border-border pt-3 flex flex-col gap-2">
+                {user ? (
+                  <>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full">Admin</Button>
+                      </Link>
+                    )}
+                    <Link to="/mis-citas" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full">Mis Citas</Button>
+                    </Link>
+                    <Button variant="ghost" size="sm" className="w-full" onClick={() => { signOut(); setMobileMenuOpen(false); }}>Salir</Button>
+                  </>
+                ) : (
+                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button size="sm" className="w-full">Iniciar Sesión</Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
