@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -10,21 +10,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Scissors, ArrowLeft, Check } from "lucide-react";
+import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-const generateTimeSlots = (start: string, end: string, duration: number) => {
+// Barber IDs
+const NACHO_ID = "12a62650-13cd-4c83-8714-86ef19a72556";
+const NESTOR_ID = "84aac2e4-615e-45c5-9a84-8c4400813489";
+
+// Barber available days (JS day: 0=Sun, 1=Mon, ..., 6=Sat)
+const BARBER_DAYS: Record<string, number[]> = {
+  [NACHO_ID]: [2, 3, 4, 5, 6],  // Tue-Sat
+  [NESTOR_ID]: [5, 6],           // Fri-Sat
+};
+
+// Schedule blocks by day
+const SCHEDULE_BLOCKS: Record<number, { start: string; end: string }[]> = {
+  2: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
+  3: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
+  4: [{ start: "10:00", end: "13:00" }, { start: "16:00", end: "20:00" }],
+  5: [{ start: "10:00", end: "20:00" }],
+  6: [{ start: "10:00", end: "20:00" }],
+};
+
+const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
   const slots: string[] = [];
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  let current = sh * 60 + sm;
-  const endMin = eh * 60 + em;
-  while (current + duration <= endMin) {
-    const h = Math.floor(current / 60);
-    const m = current % 60;
-    slots.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
-    current += duration;
+  for (const block of blocks) {
+    const [sh, sm] = block.start.split(":").map(Number);
+    const [eh, em] = block.end.split(":").map(Number);
+    let current = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    while (current + duration <= endMin) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      slots.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
+      current += duration;
+    }
   }
   return slots;
 };
@@ -48,12 +69,23 @@ export default function BookingPage() {
   const { data: appointments } = useAppointments(dateStr, selectedBarber || undefined);
   const { data: blockedSlots } = useBlockedSlots(dateStr);
 
-  const workingHours = settings?.working_hours || { start: "09:00", end: "20:00", days: [1, 2, 3, 4, 5, 6] };
   const slotDuration = settings?.slot_duration?.minutes || 30;
-
   const selectedServiceData = services?.find((s) => s.id === selectedService);
 
-  const allSlots = generateTimeSlots(workingHours.start, workingHours.end, slotDuration);
+  // Filter barbers based on which ones work on the selected date
+  const availableBarbers = useMemo(() => {
+    if (!barbers) return [];
+    return barbers;
+  }, [barbers]);
+
+  // Generate time slots based on selected date's schedule
+  const allSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    const dayOfWeek = selectedDate.getDay();
+    const blocks = SCHEDULE_BLOCKS[dayOfWeek];
+    if (!blocks) return [];
+    return generateTimeSlotsFromBlocks(blocks, slotDuration);
+  }, [selectedDate, slotDuration]);
 
   const bookedTimes = new Set(appointments?.map((a) => a.time.slice(0, 5)) || []);
   const blockedTimes = new Set<string>();
@@ -72,8 +104,17 @@ export default function BookingPage() {
   const availableSlots = allSlots.filter((s) => !bookedTimes.has(s) && !blockedTimes.has(s));
 
   const isWorkingDay = (date: Date) => {
+    if (!selectedBarber) return false;
     const day = date.getDay();
-    return (workingHours.days as number[]).includes(day === 0 ? 7 : day);
+    const barberDays = BARBER_DAYS[selectedBarber];
+    return barberDays ? barberDays.includes(day) : false;
+  };
+
+  const isBarberAvailableOnDay = (barberId: string, date?: Date) => {
+    if (!date) return true;
+    const day = date.getDay();
+    const days = BARBER_DAYS[barberId];
+    return days ? days.includes(day) : false;
   };
 
   const handleBook = async () => {
@@ -115,11 +156,15 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Volver
           </Link>
+          <a href="https://wa.me/5491170055858" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+            <MessageCircle className="w-4 h-4" />
+            11 7005-5858
+          </a>
         </div>
       </nav>
 
@@ -144,7 +189,7 @@ export default function BookingPage() {
         {/* Step 1: Service */}
         {step === 1 && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-display font-bold mb-6">Elige un servicio</h2>
+            <h2 className="text-2xl font-display font-bold mb-6">Elegí un servicio</h2>
             <div className="grid gap-3">
               {services?.map((service) => (
                 <button
@@ -160,7 +205,7 @@ export default function BookingPage() {
                       <h3 className="font-semibold">{service.name}</h3>
                       <p className="text-sm text-muted-foreground">{service.description} · {service.duration_minutes} min</p>
                     </div>
-                    <span className="text-primary font-bold text-lg">${service.price}</span>
+                    <span className="text-primary font-bold text-lg">${service.price.toLocaleString("es-AR")}</span>
                   </div>
                 </button>
               ))}
@@ -171,23 +216,28 @@ export default function BookingPage() {
         {/* Step 2: Barber */}
         {step === 2 && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-display font-bold mb-6">Elige tu barbero</h2>
+            <h2 className="text-2xl font-display font-bold mb-6">Elegí tu barbero</h2>
             <div className="grid grid-cols-2 gap-4">
-              {barbers?.map((barber) => (
-                <button
-                  key={barber.id}
-                  onClick={() => { setSelectedBarber(barber.id); setStep(3); }}
-                  className={cn(
-                    "p-6 rounded-xl border text-center transition-all hover:border-primary/50",
-                    selectedBarber === barber.id ? "border-primary bg-primary/5 glow-gold" : "border-border bg-card"
-                  )}
-                >
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Scissors className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="font-display font-semibold text-lg">{barber.name}</h3>
-                </button>
-              ))}
+              {availableBarbers?.map((barber) => {
+                const days = BARBER_DAYS[barber.id];
+                const dayLabels = days?.includes(2) && days?.includes(5) ? "Mar a Sáb" : "Vie y Sáb";
+                return (
+                  <button
+                    key={barber.id}
+                    onClick={() => { setSelectedBarber(barber.id); setSelectedDate(undefined); setSelectedTime(null); setStep(3); }}
+                    className={cn(
+                      "p-6 rounded-xl border text-center transition-all hover:border-primary/50",
+                      selectedBarber === barber.id ? "border-primary bg-primary/5 glow-gold" : "border-border bg-card"
+                    )}
+                  >
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                      <Scissors className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="font-display font-semibold text-lg">{barber.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{dayLabels}</p>
+                  </button>
+                );
+              })}
             </div>
             <Button variant="ghost" className="mt-4" onClick={() => setStep(1)}>← Atrás</Button>
           </div>
@@ -202,7 +252,7 @@ export default function BookingPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left", !selectedDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es }) : "Selecciona una fecha"}
+                    {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es }) : "Seleccioná una fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -272,7 +322,7 @@ export default function BookingPage() {
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-muted-foreground">Precio</span>
-                  <span className="text-primary font-bold text-xl">${selectedServiceData?.price}</span>
+                  <span className="text-primary font-bold text-xl">${selectedServiceData?.price.toLocaleString("es-AR")}</span>
                 </div>
               </CardContent>
             </Card>
