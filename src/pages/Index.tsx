@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Clock, Star, Users, MapPin, Phone, Instagram, MessageCircle, Scissors, Calendar, Menu, X } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +49,7 @@ export default function Index() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
+                <NotificationBell />
                 {isAdmin && (
                   <Link to="/admin" className="hidden sm:inline-flex">
                     <Button variant="outline" size="sm">Admin</Button>

@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, Clock, Scissors, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import NotificationBell from "@/components/NotificationBell";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendiente", variant: "outline" },
   confirmed: { label: "Confirmada", variant: "default" },
   completed: { label: "Completada", variant: "secondary" },
   cancelled: { label: "Cancelada", variant: "destructive" },
@@ -47,9 +49,12 @@ export default function MyAppointments() {
           <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" /> Inicio
           </Link>
-          <Link to="/reservar">
-            <Button size="sm">Nueva Reserva</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Link to="/reservar">
+              <Button size="sm">Nueva Reserva</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

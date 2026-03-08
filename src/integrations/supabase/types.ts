@@ -141,28 +141,37 @@ export type Database = {
       }
       notifications: {
         Row: {
-          appointment_id: string
+          appointment_id: string | null
           created_at: string
           id: string
+          message: string | null
+          read: boolean
           sent_at: string | null
           status: string
           type: string
+          user_id: string | null
         }
         Insert: {
-          appointment_id: string
+          appointment_id?: string | null
           created_at?: string
           id?: string
+          message?: string | null
+          read?: boolean
           sent_at?: string | null
           status?: string
           type: string
+          user_id?: string | null
         }
         Update: {
-          appointment_id?: string
+          appointment_id?: string | null
           created_at?: string
           id?: string
+          message?: string | null
+          read?: boolean
           sent_at?: string | null
           status?: string
           type?: string
+          user_id?: string | null
         }
         Relationships: [
           {
