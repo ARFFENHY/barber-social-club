@@ -135,6 +135,34 @@ export default function BookingPage() {
 
   const handleBook = async () => {
     if (!user || !selectedService || !selectedBarber || !selectedDate || !selectedTime) return;
+    // Check phone
+    if (!userPhone || userPhone.replace(/\D/g, "").length < 8) {
+      setShowPhoneDialog(true);
+      return;
+    }
+    await confirmBooking();
+  };
+
+  const savePhoneAndBook = async () => {
+    const cleaned = phoneInput.replace(/[^0-9+\s\-()]/g, "");
+    if (cleaned.replace(/\D/g, "").length < 8) {
+      toast({ title: "Error", description: "Ingresá un número de teléfono válido (mínimo 8 dígitos)", variant: "destructive" });
+      return;
+    }
+    setSavingPhone(true);
+    const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user!.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setSavingPhone(false);
+      return;
+    }
+    setUserPhone(cleaned);
+    setShowPhoneDialog(false);
+    setSavingPhone(false);
+    await confirmBooking();
+  };
+
+  const confirmBooking = async () => {
     setSubmitting(true);
     try {
       const { error } = await supabase.from("appointments").insert({
