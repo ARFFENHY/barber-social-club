@@ -6,6 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, BellRing, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function pushFetch(action: string, method: string, body?: any) {
+  const session = (await supabase.auth.getSession()).data.session;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "apikey": ANON_KEY,
+  };
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+  const opts: RequestInit = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(
+    `https://${PROJECT_ID}.supabase.co/functions/v1/push-notifications?action=${action}`,
+    opts
+  );
+  return res.json();
+}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bell, BellRing, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
