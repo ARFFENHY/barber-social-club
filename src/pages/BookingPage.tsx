@@ -194,6 +194,24 @@ export default function BookingPage() {
           message: pushMessage,
         }));
         await supabase.from("notifications").insert(notifications);
+
+        // Trigger Web Push to admins
+        try {
+          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+          await fetch(
+            `https://${projectId}.supabase.co/functions/v1/push-notifications?action=send`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: "Nueva reserva 💈",
+                body: pushMessage,
+              }),
+            }
+          );
+        } catch {
+          // Push send is best-effort
+        }
       }
 
       toast({ title: "¡Turno reservado!", description: `${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} a las ${selectedTime}` });
