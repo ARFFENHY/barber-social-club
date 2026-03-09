@@ -187,10 +187,11 @@ export default function BookingPage() {
       const barberName = barbers?.find((b) => b.id === selectedBarber)?.name || "";
       const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
       if (adminRoles && adminRoles.length > 0) {
+        const pushMessage = `${clientName} reservó: ${selectedServiceData?.name} el ${format(selectedDate, "d MMM", { locale: es })} a las ${selectedTime} con ${barberName}.`;
         const notifications = adminRoles.map((r) => ({
           user_id: r.user_id,
           type: "client_action",
-          message: `${clientName} reservó un turno: ${selectedServiceData?.name} el ${format(selectedDate, "d MMM", { locale: es })} a las ${selectedTime} con ${barberName}.`,
+          message: pushMessage,
         }));
         await supabase.from("notifications").insert(notifications);
       }
