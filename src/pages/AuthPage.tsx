@@ -74,7 +74,11 @@ export default function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Teléfono *</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 11 1234-5678" required={!isLogin} />
+                  <Input id="phone" type="tel" value={phone} onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9+\s\-()]/g, "");
+                    setPhone(val);
+                  }} placeholder="Ej: +54 11 7005 5858" required={!isLogin} minLength={8} />
+                  <p className="text-xs text-muted-foreground">Formato: +54 11 7005 5858</p>
                 </div>
               </>
             )}
