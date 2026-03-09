@@ -129,7 +129,7 @@ export default function AdminCalendar() {
   const days = eachDayOfInterval({ start: range.start, end: range.end });
 
   // Appointment mini card
-  const AptChip = ({ apt }: { apt: any }) => {
+  const AptChip = ({ apt }: { apt: any }) => {  // eslint-disable-line @typescript-eslint/no-explicit-any
     const cfg = STATUS_CONFIG[apt.status] || { label: apt.status, class: "" };
     return (
       <button
