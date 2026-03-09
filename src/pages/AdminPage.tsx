@@ -29,6 +29,7 @@ import AdminEditAppointment from "@/components/AdminEditAppointment";
 import AdminServices from "@/components/AdminServices";
 import AdminContentManager from "@/components/AdminContentManager";
 import AdminNotificationToggle from "@/components/AdminNotificationToggle";
+import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
 import NotificationBell from "@/components/NotificationBell";
 
