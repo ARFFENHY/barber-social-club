@@ -40,18 +40,7 @@ export default function AuthPage() {
           setLoading(false);
           return;
         }
-        await signUp(email, password, fullName);
-        // Update profile with phone number after signup
-        // We use a small delay to let the trigger create the profile first
-        setTimeout(async () => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase
-              .from("profiles")
-              .update({ phone: phone.trim() })
-              .eq("user_id", user.id);
-          }
-        }, 1000);
+        await signUp(email, password, fullName, phone.trim());
         toast({ title: "Cuenta creada", description: "Revisa tu email para confirmar tu cuenta." });
       }
     } catch (error: any) {
