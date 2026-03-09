@@ -137,8 +137,11 @@ export default function NotificationBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-3 border-b border-border">
+        <div className="p-3 border-b border-border flex items-center justify-between">
           <h3 className="font-display font-semibold text-sm">Notificaciones</h3>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleSound} title={soundEnabled ? "Silenciar" : "Activar sonido"}>
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-primary" /> : <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />}
+          </Button>
         </div>
         <div className="max-h-72 overflow-y-auto">
           {!notifications?.length ? (
