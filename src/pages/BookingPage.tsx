@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle } from "lucide-react";
+import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
@@ -47,6 +50,25 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [userPhone, setUserPhone] = useState<string | null>(null);
+  const [phoneLoaded, setPhoneLoaded] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  // Load user phone from profile
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("phone")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setUserPhone(data?.phone || null);
+        setPhoneLoaded(true);
+      });
+  }, [user]);
 
   const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined;
   const { data: appointments } = useAppointments(dateStr, selectedBarber || undefined);
@@ -113,6 +135,34 @@ export default function BookingPage() {
 
   const handleBook = async () => {
     if (!user || !selectedService || !selectedBarber || !selectedDate || !selectedTime) return;
+    // Check phone
+    if (!userPhone || userPhone.replace(/\D/g, "").length < 8) {
+      setShowPhoneDialog(true);
+      return;
+    }
+    await confirmBooking();
+  };
+
+  const savePhoneAndBook = async () => {
+    const cleaned = phoneInput.replace(/[^0-9+\s\-()]/g, "");
+    if (cleaned.replace(/\D/g, "").length < 8) {
+      toast({ title: "Error", description: "Ingresá un número de teléfono válido (mínimo 8 dígitos)", variant: "destructive" });
+      return;
+    }
+    setSavingPhone(true);
+    const { error } = await supabase.from("profiles").update({ phone: cleaned }).eq("user_id", user!.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setSavingPhone(false);
+      return;
+    }
+    setUserPhone(cleaned);
+    setShowPhoneDialog(false);
+    setSavingPhone(false);
+    await confirmBooking();
+  };
+
+  const confirmBooking = async () => {
     setSubmitting(true);
     try {
       const { error } = await supabase.from("appointments").insert({
@@ -344,6 +394,38 @@ export default function BookingPage() {
           </div>
         )}
       </div>
+
+      {/* Phone Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Phone className="w-5 h-5 text-primary" />
+              Número de teléfono requerido
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Para confirmar tu reserva necesitamos tu número de teléfono. Así podremos contactarte si es necesario.
+          </p>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="booking-phone">Teléfono *</Label>
+              <Input
+                id="booking-phone"
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value.replace(/[^0-9+\s\-()]/g, ""))}
+                placeholder="Ej: +54 11 7005 5858"
+                minLength={8}
+              />
+              <p className="text-xs text-muted-foreground">Formato: +54 11 7005 5858</p>
+            </div>
+            <Button className="w-full" onClick={savePhoneAndBook} disabled={savingPhone}>
+              {savingPhone ? "Guardando..." : "Guardar y confirmar reserva"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

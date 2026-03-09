@@ -317,6 +317,20 @@ export default function AdminCalendar() {
                   </p>
                 </div>
                 <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">Teléfono</p>
+                  <p className="font-medium">
+                    {selectedAppointment.profile?.phone ? (
+                      <a
+                        href={`https://wa.me/54${selectedAppointment.profile.phone.replace(/\D/g, "")}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {selectedAppointment.profile.phone}
+                      </a>
+                    ) : "Sin teléfono"}
+                  </p>
+                </div>
+                <div className="col-span-2">
                   <p className="text-muted-foreground text-xs">Estado</p>
                   <Badge variant="outline" className={cn("mt-1", STATUS_CONFIG[selectedAppointment.status]?.class)}>
                     {STATUS_CONFIG[selectedAppointment.status]?.label}

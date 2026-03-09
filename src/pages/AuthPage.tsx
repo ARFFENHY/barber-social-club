@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,18 +40,7 @@ export default function AuthPage() {
           setLoading(false);
           return;
         }
-        await signUp(email, password, fullName);
-        // Update profile with phone number after signup
-        // We use a small delay to let the trigger create the profile first
-        setTimeout(async () => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase
-              .from("profiles")
-              .update({ phone: phone.trim() })
-              .eq("user_id", user.id);
-          }
-        }, 1000);
+        await signUp(email, password, fullName, phone.trim());
         toast({ title: "Cuenta creada", description: "Revisa tu email para confirmar tu cuenta." });
       }
     } catch (error: any) {
@@ -85,7 +74,11 @@ export default function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Teléfono *</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 11 1234-5678" required={!isLogin} />
+                  <Input id="phone" type="tel" value={phone} onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9+\s\-()]/g, "");
+                    setPhone(val);
+                  }} placeholder="Ej: +54 11 7005 5858" required={!isLogin} minLength={8} />
+                  <p className="text-xs text-muted-foreground">Formato: +54 11 7005 5858</p>
                 </div>
               </>
             )}
