@@ -28,6 +28,8 @@ import AdminBlockedSlots from "@/components/AdminBlockedSlots";
 import AdminEditAppointment from "@/components/AdminEditAppointment";
 import AdminServices from "@/components/AdminServices";
 import AdminContentManager from "@/components/AdminContentManager";
+import AdminNotificationToggle from "@/components/AdminNotificationToggle";
+import AdminCalendar from "@/components/AdminCalendar";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
