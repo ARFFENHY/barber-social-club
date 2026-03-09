@@ -394,6 +394,38 @@ export default function BookingPage() {
           </div>
         )}
       </div>
+
+      {/* Phone Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Phone className="w-5 h-5 text-primary" />
+              Número de teléfono requerido
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Para confirmar tu reserva necesitamos tu número de teléfono. Así podremos contactarte si es necesario.
+          </p>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="booking-phone">Teléfono *</Label>
+              <Input
+                id="booking-phone"
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value.replace(/[^0-9+\s\-()]/g, ""))}
+                placeholder="Ej: +54 11 7005 5858"
+                minLength={8}
+              />
+              <p className="text-xs text-muted-foreground">Formato: +54 11 7005 5858</p>
+            </div>
+            <Button className="w-full" onClick={savePhoneAndBook} disabled={savingPhone}>
+              {savingPhone ? "Guardando..." : "Guardar y confirmar reserva"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
