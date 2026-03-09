@@ -725,9 +725,15 @@ function AdminDashboard() {
 
         {/* ===================== CONFIGURACIÓN ===================== */}
         <TabsContent value="settings" className="space-y-6">
+          <AdminNotificationToggle />
           <AdminServices />
           <AdminScheduleSettings />
           <AdminBlockedSlots />
+        </TabsContent>
+
+        {/* ===================== CALENDARIO DE RESERVAS ===================== */}
+        <TabsContent value="reservas" className="space-y-6">
+          <AdminCalendar />
         </TabsContent>
 
         {/* ===================== CONTENIDO ===================== */}
