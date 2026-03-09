@@ -29,6 +29,7 @@ import AdminEditAppointment from "@/components/AdminEditAppointment";
 import AdminServices from "@/components/AdminServices";
 import AdminContentManager from "@/components/AdminContentManager";
 import AdminNotificationToggle from "@/components/AdminNotificationToggle";
+import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -727,6 +728,7 @@ function AdminDashboard() {
         {/* ===================== CONFIGURACIÓN ===================== */}
         <TabsContent value="settings" className="space-y-6">
           <AdminNotificationToggle />
+          <AdminPushNotifications />
           <AdminServices />
           <AdminScheduleSettings />
           <AdminBlockedSlots />

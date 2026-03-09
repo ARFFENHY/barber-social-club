@@ -187,12 +187,36 @@ export default function BookingPage() {
       const barberName = barbers?.find((b) => b.id === selectedBarber)?.name || "";
       const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
       if (adminRoles && adminRoles.length > 0) {
+        const pushMessage = `${clientName} reservó: ${selectedServiceData?.name} el ${format(selectedDate, "d MMM", { locale: es })} a las ${selectedTime} con ${barberName}.`;
         const notifications = adminRoles.map((r) => ({
           user_id: r.user_id,
           type: "client_action",
-          message: `${clientName} reservó un turno: ${selectedServiceData?.name} el ${format(selectedDate, "d MMM", { locale: es })} a las ${selectedTime} con ${barberName}.`,
+          message: pushMessage,
         }));
         await supabase.from("notifications").insert(notifications);
+
+        // Trigger Web Push to admins
+        try {
+          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          await fetch(
+            `https://${projectId}.supabase.co/functions/v1/push-notifications?action=send`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": anonKey,
+                "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              },
+              body: JSON.stringify({
+                title: "Nueva reserva 💈",
+                body: pushMessage,
+              }),
+            }
+          );
+        } catch {
+          // Push send is best-effort
+        }
       }
 
       toast({ title: "¡Turno reservado!", description: `${format(selectedDate, "EEEE d 'de' MMMM", { locale: es })} a las ${selectedTime}` });
