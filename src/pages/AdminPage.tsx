@@ -28,6 +28,8 @@ import AdminBlockedSlots from "@/components/AdminBlockedSlots";
 import AdminEditAppointment from "@/components/AdminEditAppointment";
 import AdminServices from "@/components/AdminServices";
 import AdminContentManager from "@/components/AdminContentManager";
+import AdminNotificationToggle from "@/components/AdminNotificationToggle";
+import AdminCalendar from "@/components/AdminCalendar";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
@@ -354,6 +356,7 @@ function AdminDashboard() {
           <TabsTrigger value="history"><History className="w-4 h-4 mr-1" />Historial</TabsTrigger>
           <TabsTrigger value="clients"><Users className="w-4 h-4 mr-1" />Clientes</TabsTrigger>
           <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
+          <TabsTrigger value="reservas"><CalendarIcon className="w-4 h-4 mr-1" />Reservas</TabsTrigger>
           <TabsTrigger value="content"><Type className="w-4 h-4 mr-1" />Contenido</TabsTrigger>
         </TabsList>
 
@@ -723,9 +726,15 @@ function AdminDashboard() {
 
         {/* ===================== CONFIGURACIÓN ===================== */}
         <TabsContent value="settings" className="space-y-6">
+          <AdminNotificationToggle />
           <AdminServices />
           <AdminScheduleSettings />
           <AdminBlockedSlots />
+        </TabsContent>
+
+        {/* ===================== CALENDARIO DE RESERVAS ===================== */}
+        <TabsContent value="reservas" className="space-y-6">
+          <AdminCalendar />
         </TabsContent>
 
         {/* ===================== CONTENIDO ===================== */}
