@@ -113,7 +113,7 @@ export default function AdminCalendar() {
     queryClient.invalidateQueries({ queryKey: ["admin_all_appointments"] });
   };
 
-  const getAptsForDay = (date: Date) => {
+  const getAptsForDay = (date: Date): any[] => {
     const ds = format(date, "yyyy-MM-dd");
     return appointments?.filter((a) => a.date === ds && a.status !== "cancelled") || [];
   };
