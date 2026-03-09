@@ -4,13 +4,10 @@ import NotificationBell from "@/components/NotificationBell";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useServices } from "@/hooks/useShopData";
+import { useServices, useShopSettings } from "@/hooks/useShopData";
 import bscLogo from "@/assets/bsc-logo.jpeg";
 
-const WHATSAPP_URL = "https://wa.me/5491170055858";
-const INSTAGRAM_URL = "https://www.instagram.com/barber.social.club";
-
-const galleryImages = [
+const DEFAULT_GALLERY = [
   "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=400&fit=crop",
   "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=400&fit=crop",
   "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&h=400&fit=crop",
@@ -30,7 +27,34 @@ const NAV_LINKS = [
 export default function Index() {
   const { user, isAdmin, signOut } = useAuth();
   const { data: services } = useServices();
+  const { data: settings } = useShopSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const s = settings || {};
+  const logoUrl = s.logo_url || bscLogo;
+  const heroImage = s.hero_image_url || bscLogo;
+  const heroTitle = s.hero_title || "Tu Estilo, Nuestro Arte";
+  const heroSubtitle = s.hero_subtitle || "Reservá tu turno en segundos. Cortes profesionales con Nacho y Nestor.";
+  const address = s.business_address || "Buenos Aires 5075 entre Lavalle y General Paz";
+  const whatsappNum = s.business_whatsapp || "5491170055858";
+  const instagramUser = s.business_instagram || "barber.social.club";
+  const scheduleWeek = s.schedule_weekdays || "Martes a Jueves: 10:00 a 13:00 · 16:00 a 20:00";
+  const scheduleWeekend = s.schedule_weekend || "Viernes y Sábado: 10:00 a 20:00";
+  const aboutText = s.about_text || "Barber Social Club es un espacio moderno y profesional especializado en cortes masculinos y cuidado de la barba. Nuestro equipo, formado por Nacho y Nestor, combina técnica, estilo y atención personalizada para que cada cliente salga con el look que busca.";
+  const aboutHistory = s.about_history || "";
+  const aboutTeam = s.about_team || "";
+
+  let galleryImages: string[] = DEFAULT_GALLERY;
+  try {
+    const raw = s.gallery_images;
+    if (raw) {
+      const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed) && parsed.length > 0) galleryImages = parsed;
+    }
+  } catch {}
+
+  const WHATSAPP_URL = `https://wa.me/${whatsappNum}`;
+  const INSTAGRAM_URL = `https://www.instagram.com/${instagramUser}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +62,7 @@ export default function Index() {
       <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src={bscLogo} alt="BSC Logo" className="w-8 h-8 rounded-full object-cover" />
+            <img src={logoUrl} alt="BSC Logo" className="w-8 h-8 rounded-full object-cover" />
             <span className="font-display text-xl font-bold text-gradient-gold">BSC</span>
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm">
@@ -80,14 +104,7 @@ export default function Index() {
           <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md animate-fade-in">
             <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
               {NAV_LINKS.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 text-foreground hover:text-primary transition-colors font-medium"
-                >
-                  {l.label}
-                </a>
+                <a key={l.href} href={l.href} onClick={() => setMobileMenuOpen(false)} className="py-2 text-foreground hover:text-primary transition-colors font-medium">{l.label}</a>
               ))}
               <div className="border-t border-border pt-3 flex flex-col gap-2">
                 {user ? (
@@ -116,7 +133,7 @@ export default function Index() {
       {/* Hero */}
       <section id="inicio" className="relative pt-16 min-h-[85vh] flex items-center justify-center px-4">
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-background">
-          <img src={bscLogo} alt="BSC Background" className="w-[500px] md:w-[600px] h-auto object-contain opacity-40" />
+          <img src={heroImage} alt="BSC Background" className="w-[500px] md:w-[600px] h-auto object-contain opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/80" />
         </div>
         <div className="relative z-10 container mx-auto text-center max-w-3xl animate-fade-in">
@@ -125,14 +142,12 @@ export default function Index() {
             Barbería Profesional
           </div>
           <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 text-gradient-gold leading-tight">
-            Tu Estilo, Nuestro Arte
+            {heroTitle}
           </h1>
-          <p className="text-lg text-muted-foreground mb-4 max-w-xl mx-auto">
-            Reservá tu turno en segundos. Cortes profesionales con Nacho y Nestor.
-          </p>
+          <p className="text-lg text-muted-foreground mb-4 max-w-xl mx-auto">{heroSubtitle}</p>
           <p className="text-sm text-muted-foreground mb-8">
             <MapPin className="w-4 h-4 inline mr-1" />
-            Buenos Aires 5075 entre Lavalle y General Paz
+            {address}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to={user ? "/reservar" : "/auth"}>
@@ -201,21 +216,25 @@ export default function Index() {
         <div className="container mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-display font-bold mb-6 text-gradient-gold">Sobre Nosotros</h2>
           <div className="flex justify-center mb-6">
-            <img src={bscLogo} alt="BSC Logo" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+            <img src={logoUrl} alt="BSC Logo" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
           </div>
-          <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-            <strong className="text-foreground">Barber Social Club</strong> es un espacio moderno y profesional especializado en cortes masculinos y cuidado de la barba. Nuestro equipo, formado por Nacho y Nestor, combina técnica, estilo y atención personalizada para que cada cliente salga con el look que busca.
+          <p className="text-muted-foreground text-lg leading-relaxed mb-4">
+            <strong className="text-foreground">Barber Social Club</strong> {aboutText}
           </p>
+          {aboutHistory && (
+            <p className="text-muted-foreground leading-relaxed mb-4">{aboutHistory}</p>
+          )}
+          {aboutTeam && (
+            <p className="text-muted-foreground leading-relaxed mb-6">{aboutTeam}</p>
+          )}
           <div className="grid sm:grid-cols-2 gap-4 mt-8">
             <div className="p-4 rounded-xl bg-card border border-border">
-              <h4 className="font-display font-semibold text-primary mb-2">Martes a Jueves</h4>
-              <p className="text-muted-foreground text-sm">10:00 a 13:00 · 16:00 a 20:00</p>
-              <p className="text-muted-foreground text-xs mt-1">Atiende: Nacho</p>
+              <h4 className="font-display font-semibold text-primary mb-2">Entre semana</h4>
+              <p className="text-muted-foreground text-sm">{scheduleWeek}</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border">
-              <h4 className="font-display font-semibold text-primary mb-2">Viernes y Sábado</h4>
-              <p className="text-muted-foreground text-sm">10:00 a 20:00</p>
-              <p className="text-muted-foreground text-xs mt-1">Atienden: Nacho y Nestor</p>
+              <h4 className="font-display font-semibold text-primary mb-2">Fin de semana</h4>
+              <p className="text-muted-foreground text-sm">{scheduleWeekend}</p>
             </div>
           </div>
         </div>
@@ -228,18 +247,12 @@ export default function Index() {
           <p className="text-center text-muted-foreground mb-8">
             Seguinos en{" "}
             <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              @barber.social.club
+              @{instagramUser}
             </a>
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {galleryImages.map((img, i) => (
-              <a
-                key={i}
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="aspect-square rounded-lg overflow-hidden border border-border hover:glow-gold transition-all"
-              >
+              <a key={i} href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-lg overflow-hidden border border-border hover:glow-gold transition-all">
                 <img src={img} alt={`Trabajo de barbería ${i + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
               </a>
             ))}
@@ -256,21 +269,21 @@ export default function Index() {
               <MapPin className="w-6 h-6 text-primary flex-shrink-0" />
               <div>
                 <p className="font-medium">Dirección</p>
-                <p className="text-muted-foreground text-sm">Buenos Aires 5075 entre Lavalle y General Paz</p>
+                <p className="text-muted-foreground text-sm">{address}</p>
               </div>
             </div>
-            <a href="tel:+5491170055858" className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-gold transition-colors">
+            <a href={`tel:+${whatsappNum}`} className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-gold transition-colors">
               <Phone className="w-6 h-6 text-primary flex-shrink-0" />
               <div>
                 <p className="font-medium">Teléfono / WhatsApp</p>
-                <p className="text-muted-foreground text-sm">11 7005-5858</p>
+                <p className="text-muted-foreground text-sm">{whatsappNum}</p>
               </div>
             </a>
             <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-gold transition-colors">
               <Instagram className="w-6 h-6 text-primary flex-shrink-0" />
               <div>
                 <p className="font-medium">Instagram</p>
-                <p className="text-muted-foreground text-sm">@barber.social.club</p>
+                <p className="text-muted-foreground text-sm">@{instagramUser}</p>
               </div>
             </a>
           </div>
@@ -300,10 +313,10 @@ export default function Index() {
       <footer className="py-8 px-4 border-t border-border text-center text-muted-foreground text-sm">
         <div className="container mx-auto">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src={bscLogo} alt="BSC Logo" className="w-5 h-5 rounded-full object-cover" />
+            <img src={logoUrl} alt="BSC Logo" className="w-5 h-5 rounded-full object-cover" />
             <span className="font-display text-gradient-gold">Barber Social Club</span>
           </div>
-          <p>Buenos Aires 5075 entre Lavalle y General Paz</p>
+          <p>{address}</p>
           <p className="mt-1">© {new Date().getFullYear()} Todos los derechos reservados.</p>
         </div>
       </footer>
