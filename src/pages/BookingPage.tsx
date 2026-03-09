@@ -198,11 +198,16 @@ export default function BookingPage() {
         // Trigger Web Push to admins
         try {
           const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
           await fetch(
             `https://${projectId}.supabase.co/functions/v1/push-notifications?action=send`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "apikey": anonKey,
+                "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              },
               body: JSON.stringify({
                 title: "Nueva reserva 💈",
                 body: pushMessage,

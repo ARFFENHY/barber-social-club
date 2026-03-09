@@ -76,26 +76,12 @@ export default function AdminPushNotifications() {
     if (!user) return;
     setToggling(true);
     try {
-      // Register service worker
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
-      // Get VAPID public key
-      const { data: vapidData, error: vapidErr } = await supabase.functions.invoke(
-        "push-notifications",
-        { body: null, method: "GET", headers: {} }
-      );
-
-      // Use fetch directly for GET with query params
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const vapidRes = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/push-notifications?action=vapid-key`,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      const vapidJson = await vapidRes.json();
+      const vapidJson = await pushFetch("vapid-key", "GET");
       if (!vapidJson.publicKey) throw new Error("No se pudo obtener la clave VAPID");
 
-      // Request permission
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         toast({ title: "Permiso denegado", description: "Necesitás permitir notificaciones en tu navegador.", variant: "destructive" });
@@ -103,29 +89,16 @@ export default function AdminPushNotifications() {
         return;
       }
 
-      // Subscribe to push
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidJson.publicKey),
       });
 
-      // Save subscription on server
       const subJson = subscription.toJSON();
-      const saveRes = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/push-notifications?action=subscribe`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            subscription: {
-              endpoint: subJson.endpoint,
-              keys: subJson.keys,
-            },
-          }),
-        }
-      );
-      const saveData = await saveRes.json();
+      const saveData = await pushFetch("subscribe", "POST", {
+        userId: user.id,
+        subscription: { endpoint: subJson.endpoint, keys: subJson.keys },
+      });
       if (saveData.error) throw new Error(saveData.error);
 
       setSubscribed(true);
@@ -145,18 +118,7 @@ export default function AdminPushNotifications() {
       if (reg) {
         const sub = await reg.pushManager.getSubscription();
         if (sub) {
-          const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-          await fetch(
-            `https://${projectId}.supabase.co/functions/v1/push-notifications?action=unsubscribe`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: user.id,
-                endpoint: sub.endpoint,
-              }),
-            }
-          );
+          await pushFetch("unsubscribe", "POST", { userId: user.id, endpoint: sub.endpoint });
           await sub.unsubscribe();
         }
       }
