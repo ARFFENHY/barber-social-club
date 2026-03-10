@@ -360,6 +360,7 @@ function AdminDashboard() {
           <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
           <TabsTrigger value="reservas"><CalendarIcon className="w-4 h-4 mr-1" />Reservas</TabsTrigger>
           <TabsTrigger value="content"><Type className="w-4 h-4 mr-1" />Contenido</TabsTrigger>
+          <TabsTrigger value="appearance"><Palette className="w-4 h-4 mr-1" />Apariencia</TabsTrigger>
         </TabsList>
 
         {/* ===================== CALENDARIO ===================== */}
