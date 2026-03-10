@@ -108,7 +108,7 @@ export default function AdminColorPanel() {
 
       setSavedColors({ ...colors });
       // Apply immediately
-      applyColorsToDOM(colors);
+      applyColorsToDOM(colors as unknown as Record<string, string>);
       toast({ title: "Colores guardados", description: "Los cambios se aplicaron correctamente." });
     } catch {
       toast({ title: "Error", description: "No se pudieron guardar los colores.", variant: "destructive" });
@@ -245,12 +245,85 @@ export default function AdminColorPanel() {
   );
 }
 
+/** Convert hex color to HSL string (without hsl() wrapper) for Tailwind CSS vars */
+function hexToHSL(hex: string): string {
+  let r = 0, g = 0, b = 0;
+  hex = hex.replace("#", "");
+  if (hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+  r = parseInt(hex.substring(0, 2), 16) / 255;
+  g = parseInt(hex.substring(2, 4), 16) / 255;
+  b = parseInt(hex.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+/** Mapping from panel color keys to Tailwind CSS variable names */
+const COLOR_TO_CSS_MAP: Record<string, string[]> = {
+  "color-primary": ["--primary", "--ring", "--sidebar-primary", "--gold"],
+  "color-secondary": ["--secondary", "--sidebar-accent"],
+  "color-background": ["--background", "--sidebar-background"],
+  "color-text": ["--foreground", "--card-foreground", "--popover-foreground", "--sidebar-foreground"],
+  "color-text-secondary": ["--muted-foreground", "--secondary-foreground"],
+  "color-button": ["--primary", "--gold"],
+  "color-button-hover": ["--gold-dark", "--accent"],
+  "color-link": ["--gold-light"],
+  "color-border": ["--border", "--input", "--sidebar-border"],
+  "color-success": [],
+  "color-warning": [],
+  "color-error": ["--destructive"],
+};
+
 /** Apply custom theme colors as CSS variables on :root */
-export function applyColorsToDOM(colors: Partial<ThemeColors>) {
+export function applyColorsToDOM(colors: Partial<Record<string, string>>) {
   const root = document.documentElement;
+  const applied = new Set<string>();
+
   Object.entries(colors).forEach(([key, value]) => {
-    if (value) {
-      root.style.setProperty(`--${key}`, value);
+    if (!value) return;
+    // Set the raw custom variable
+    root.style.setProperty(`--${key}`, value);
+
+    // Map to Tailwind CSS variables (HSL)
+    const hsl = hexToHSL(value);
+    const targets = COLOR_TO_CSS_MAP[key];
+    if (targets) {
+      targets.forEach((cssVar) => {
+        if (!applied.has(cssVar)) {
+          root.style.setProperty(cssVar, hsl);
+          applied.add(cssVar);
+        }
+      });
     }
   });
+
+  // Derive card/popover from background if set
+  if (colors["color-background"]) {
+    const bgHsl = hexToHSL(colors["color-background"]);
+    const parts = bgHsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+    if (parts) {
+      const [, h, s, l] = parts.map(Number);
+      const cardL = Math.min(l + 4, 100);
+      const cardHsl = `${h} ${s}% ${cardL}%`;
+      if (!applied.has("--card")) root.style.setProperty("--card", cardHsl);
+      if (!applied.has("--popover")) root.style.setProperty("--popover", cardHsl);
+      const mutedL = Math.min(l + 8, 100);
+      root.style.setProperty("--muted", `${h} ${Math.max(s - 2, 0)}% ${mutedL}%`);
+    }
+  }
+
+  // Derive primary-foreground from background
+  if (colors["color-background"]) {
+    root.style.setProperty("--primary-foreground", hexToHSL(colors["color-background"]));
+    root.style.setProperty("--sidebar-primary-foreground", hexToHSL(colors["color-background"]));
+  }
 }
