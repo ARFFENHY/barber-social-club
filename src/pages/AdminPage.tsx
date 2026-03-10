@@ -31,6 +31,7 @@ import AdminContentManager from "@/components/AdminContentManager";
 import AdminNotificationToggle from "@/components/AdminNotificationToggle";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
+import AdminColorPanel from "@/components/AdminColorPanel";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
