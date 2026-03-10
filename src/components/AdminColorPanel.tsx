@@ -108,7 +108,7 @@ export default function AdminColorPanel() {
 
       setSavedColors({ ...colors });
       // Apply immediately
-      applyColorsToDOM(colors);
+      applyColorsToDOM(colors as unknown as Record<string, string>);
       toast({ title: "Colores guardados", description: "Los cambios se aplicaron correctamente." });
     } catch {
       toast({ title: "Error", description: "No se pudieron guardar los colores.", variant: "destructive" });
