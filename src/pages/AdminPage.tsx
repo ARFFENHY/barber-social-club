@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
   TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings, Edit, Trash2, History,
-  UserCheck, RefreshCw, DollarSign, Type,
+  UserCheck, RefreshCw, DollarSign, Type, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
@@ -31,6 +31,7 @@ import AdminContentManager from "@/components/AdminContentManager";
 import AdminNotificationToggle from "@/components/AdminNotificationToggle";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
+import AdminColorPanel from "@/components/AdminColorPanel";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
@@ -359,6 +360,7 @@ function AdminDashboard() {
           <TabsTrigger value="settings"><Settings className="w-4 h-4 mr-1" />Configuración</TabsTrigger>
           <TabsTrigger value="reservas"><CalendarIcon className="w-4 h-4 mr-1" />Reservas</TabsTrigger>
           <TabsTrigger value="content"><Type className="w-4 h-4 mr-1" />Contenido</TabsTrigger>
+          <TabsTrigger value="appearance"><Palette className="w-4 h-4 mr-1" />Apariencia</TabsTrigger>
         </TabsList>
 
         {/* ===================== CALENDARIO ===================== */}
@@ -742,6 +744,11 @@ function AdminDashboard() {
         {/* ===================== CONTENIDO ===================== */}
         <TabsContent value="content" className="space-y-6">
           <AdminContentManager />
+        </TabsContent>
+
+        {/* ===================== APARIENCIA ===================== */}
+        <TabsContent value="appearance" className="space-y-6">
+          <AdminColorPanel />
         </TabsContent>
       </Tabs>
 
