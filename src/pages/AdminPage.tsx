@@ -745,6 +745,11 @@ function AdminDashboard() {
         <TabsContent value="content" className="space-y-6">
           <AdminContentManager />
         </TabsContent>
+
+        {/* ===================== APARIENCIA ===================== */}
+        <TabsContent value="appearance" className="space-y-6">
+          <AdminColorPanel />
+        </TabsContent>
       </Tabs>
 
       {/* Edit appointment dialog */}
