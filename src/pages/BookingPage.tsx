@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBarbers, useServices, useAppointments, useBlockedSlots, useShopSettings } from "@/hooks/useShopData";
+import { useBarbers, useServices, useBlockedSlots, useShopSettings } from "@/hooks/useShopData";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
   const slots: string[] = [];
@@ -40,6 +41,7 @@ export default function BookingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: barbers } = useBarbers();
   const { data: services } = useServices();
   const { data: settings } = useShopSettings();
@@ -55,6 +57,7 @@ export default function BookingPage() {
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [bookedAppointments, setBookedAppointments] = useState<any[]>([]);
 
   // Load user phone from profile
   useEffect(() => {
@@ -71,8 +74,32 @@ export default function BookingPage() {
   }, [user]);
 
   const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined;
-  const { data: appointments } = useAppointments(dateStr, selectedBarber || undefined);
   const { data: blockedSlots } = useBlockedSlots(dateStr);
+
+  // Fetch appointments for selected date + barber with manual refresh
+  const fetchAppointments = useCallback(async () => {
+    if (!dateStr || !selectedBarber) { setBookedAppointments([]); return; }
+    const { data } = await supabase
+      .from("appointments")
+      .select("time, status")
+      .eq("date", dateStr)
+      .eq("barber_id", selectedBarber)
+      .neq("status", "cancelled");
+    setBookedAppointments(data || []);
+  }, [dateStr, selectedBarber]);
+
+  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+
+  // Real-time subscription: refresh slots when any appointment changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("booking-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAppointments]);
 
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
@@ -109,7 +136,7 @@ export default function BookingPage() {
     return generateTimeSlotsFromBlocks(blocks, slotDuration);
   }, [selectedDate, slotDuration, scheduleBlocks]);
 
-  const bookedTimes = new Set(appointments?.map((a) => a.time.slice(0, 5)) || []);
+  const bookedTimes = new Set(bookedAppointments.map((a) => a.time.slice(0, 5)));
   const blockedTimes = new Set<string>();
   blockedSlots?.forEach((b) => {
     if (b.barber_id === selectedBarber || !b.barber_id) {
@@ -122,8 +149,6 @@ export default function BookingPage() {
       }
     }
   });
-
-  const availableSlots = allSlots.filter((s) => !bookedTimes.has(s) && !blockedTimes.has(s));
 
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
