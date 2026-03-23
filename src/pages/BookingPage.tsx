@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBarbers, useServices, useAppointments, useBlockedSlots, useShopSettings } from "@/hooks/useShopData";
+import { useBarbers, useServices, useBlockedSlots, useShopSettings } from "@/hooks/useShopData";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Scissors, ArrowLeft, Check, MessageCircle, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 const generateTimeSlotsFromBlocks = (blocks: { start: string; end: string }[], duration: number) => {
   const slots: string[] = [];
@@ -40,6 +41,7 @@ export default function BookingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: barbers } = useBarbers();
   const { data: services } = useServices();
   const { data: settings } = useShopSettings();
@@ -55,6 +57,7 @@ export default function BookingPage() {
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [bookedAppointments, setBookedAppointments] = useState<any[]>([]);
 
   // Load user phone from profile
   useEffect(() => {
@@ -71,8 +74,32 @@ export default function BookingPage() {
   }, [user]);
 
   const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined;
-  const { data: appointments } = useAppointments(dateStr, selectedBarber || undefined);
   const { data: blockedSlots } = useBlockedSlots(dateStr);
+
+  // Fetch appointments for selected date + barber with manual refresh
+  const fetchAppointments = useCallback(async () => {
+    if (!dateStr || !selectedBarber) { setBookedAppointments([]); return; }
+    const { data } = await supabase
+      .from("appointments")
+      .select("time, status")
+      .eq("date", dateStr)
+      .eq("barber_id", selectedBarber)
+      .neq("status", "cancelled");
+    setBookedAppointments(data || []);
+  }, [dateStr, selectedBarber]);
+
+  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+
+  // Real-time subscription: refresh slots when any appointment changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("booking-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAppointments]);
 
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
@@ -109,7 +136,7 @@ export default function BookingPage() {
     return generateTimeSlotsFromBlocks(blocks, slotDuration);
   }, [selectedDate, slotDuration, scheduleBlocks]);
 
-  const bookedTimes = new Set(appointments?.map((a) => a.time.slice(0, 5)) || []);
+  const bookedTimes = new Set(bookedAppointments.map((a) => a.time.slice(0, 5)));
   const blockedTimes = new Set<string>();
   blockedSlots?.forEach((b) => {
     if (b.barber_id === selectedBarber || !b.barber_id) {
@@ -122,8 +149,6 @@ export default function BookingPage() {
       }
     }
   });
-
-  const availableSlots = allSlots.filter((s) => !bookedTimes.has(s) && !blockedTimes.has(s));
 
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
@@ -175,7 +200,10 @@ export default function BookingPage() {
       });
       if (error) {
         if (error.code === "23505") {
-          toast({ title: "Horario no disponible", description: "Ese turno ya fue reservado.", variant: "destructive" });
+          toast({ title: "Turno no disponible", description: "Este turno acaba de ser reservado. Por favor seleccioná otro horario.", variant: "destructive" });
+          fetchAppointments();
+          setStep(3);
+          setSelectedTime(null);
         } else {
           throw error;
         }
@@ -352,23 +380,34 @@ export default function BookingPage() {
 
               {selectedDate && (
                 <div>
-                  <h3 className="font-medium mb-3">Horarios disponibles</h3>
-                  {availableSlots.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No hay horarios disponibles para esta fecha.</p>
+                  <h3 className="font-medium mb-3">Horarios</h3>
+                  {allSlots.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No hay horarios para esta fecha.</p>
                   ) : (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                      {availableSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          onClick={() => { setSelectedTime(slot); setStep(4); }}
-                          className={cn(
-                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
-                            selectedTime === slot ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          {slot}
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {allSlots.map((slot) => {
+                        const isBooked = bookedTimes.has(slot) || blockedTimes.has(slot);
+                        return (
+                          <button
+                            key={slot}
+                            disabled={isBooked}
+                            onClick={() => { if (!isBooked) { setSelectedTime(slot); setStep(4); } }}
+                            className={cn(
+                              "py-3 px-3 rounded-xl text-sm font-semibold border-2 transition-all duration-200",
+                              isBooked
+                                ? "border-destructive/30 bg-destructive/10 text-destructive/60 cursor-not-allowed line-through"
+                                : selectedTime === slot
+                                  ? "border-primary bg-primary text-primary-foreground scale-105 shadow-lg"
+                                  : "border-green-600/40 bg-green-900/10 text-green-400 hover:border-green-500 hover:bg-green-900/20 hover:scale-[1.02]"
+                            )}
+                          >
+                            <span className="block">{slot}</span>
+                            <span className="block text-[10px] font-normal mt-0.5">
+                              {isBooked ? "Ocupado" : "Disponible"}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

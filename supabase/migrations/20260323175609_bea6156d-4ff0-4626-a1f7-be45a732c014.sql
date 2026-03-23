@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX unique_appointment_slot ON public.appointments (barber_id, date, time) WHERE status != 'cancelled';
