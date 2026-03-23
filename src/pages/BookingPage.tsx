@@ -377,23 +377,34 @@ export default function BookingPage() {
 
               {selectedDate && (
                 <div>
-                  <h3 className="font-medium mb-3">Horarios disponibles</h3>
-                  {availableSlots.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No hay horarios disponibles para esta fecha.</p>
+                  <h3 className="font-medium mb-3">Horarios</h3>
+                  {allSlots.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No hay horarios para esta fecha.</p>
                   ) : (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                      {availableSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          onClick={() => { setSelectedTime(slot); setStep(4); }}
-                          className={cn(
-                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
-                            selectedTime === slot ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          {slot}
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {allSlots.map((slot) => {
+                        const isBooked = bookedTimes.has(slot) || blockedTimes.has(slot);
+                        return (
+                          <button
+                            key={slot}
+                            disabled={isBooked}
+                            onClick={() => { if (!isBooked) { setSelectedTime(slot); setStep(4); } }}
+                            className={cn(
+                              "py-3 px-3 rounded-xl text-sm font-semibold border-2 transition-all duration-200",
+                              isBooked
+                                ? "border-destructive/30 bg-destructive/10 text-destructive/60 cursor-not-allowed line-through"
+                                : selectedTime === slot
+                                  ? "border-primary bg-primary text-primary-foreground scale-105 shadow-lg"
+                                  : "border-green-600/40 bg-green-900/10 text-green-400 hover:border-green-500 hover:bg-green-900/20 hover:scale-[1.02]"
+                            )}
+                          >
+                            <span className="block">{slot}</span>
+                            <span className="block text-[10px] font-normal mt-0.5">
+                              {isBooked ? "Ocupado" : "Disponible"}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
