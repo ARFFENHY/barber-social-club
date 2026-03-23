@@ -200,7 +200,10 @@ export default function BookingPage() {
       });
       if (error) {
         if (error.code === "23505") {
-          toast({ title: "Horario no disponible", description: "Ese turno ya fue reservado.", variant: "destructive" });
+          toast({ title: "Turno no disponible", description: "Este turno acaba de ser reservado. Por favor seleccioná otro horario.", variant: "destructive" });
+          fetchAppointments();
+          setStep(3);
+          setSelectedTime(null);
         } else {
           throw error;
         }
