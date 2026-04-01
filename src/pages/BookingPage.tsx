@@ -174,6 +174,16 @@ export default function BookingPage() {
     }
   });
 
+  // Calculate total slots per day of week for calendar badge
+  const totalSlotsPerDow = useMemo(() => {
+    const result: Record<number, number> = {};
+    for (const [dayStr, blocks] of Object.entries(scheduleBlocks)) {
+      const day = Number(dayStr);
+      result[day] = generateTimeSlotsFromBlocks(blocks, slotDuration).length;
+    }
+    return result;
+  }, [scheduleBlocks, slotDuration]);
+
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
     const day = date.getDay();
