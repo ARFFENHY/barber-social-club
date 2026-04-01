@@ -402,7 +402,7 @@ export default function BookingPage() {
                                 ? "border-destructive/30 bg-destructive/10 text-destructive/60 cursor-not-allowed line-through"
                                 : selectedTime === slot
                                   ? "border-primary bg-primary text-primary-foreground scale-105 shadow-lg"
-                                  : "border-green-600/40 bg-green-900/10 text-green-400 hover:border-green-500 hover:bg-green-900/20 hover:scale-[1.02]"
+                                  : "border-accent bg-accent/10 text-accent-foreground hover:border-primary/50 hover:bg-accent/20 hover:scale-[1.02]"
                             )}
                           >
                             <span className="block">{slot}</span>
