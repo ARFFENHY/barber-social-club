@@ -139,6 +139,31 @@ export default function AuthPage() {
                 </button>
               </div>
             </div>
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={async () => {
+                    if (!email.trim()) {
+                      toast({ title: "Ingresá tu email", description: "Escribí tu email arriba y luego hacé clic en 'Olvidé mi contraseña'", variant: "destructive" });
+                      return;
+                    }
+                    try {
+                      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                      });
+                      if (error) throw error;
+                      toast({ title: "Email enviado", description: "Revisá tu bandeja de entrada para restablecer tu contraseña" });
+                    } catch (err: any) {
+                      toast({ title: "Error", description: err.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Cargando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
             </Button>
