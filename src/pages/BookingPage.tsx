@@ -58,6 +58,7 @@ export default function BookingPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
   const [bookedAppointments, setBookedAppointments] = useState<any[]>([]);
+  const [monthAppointmentCounts, setMonthAppointmentCounts] = useState<Record<string, number>>({});
 
   // Load user phone from profile
   useEffect(() => {
