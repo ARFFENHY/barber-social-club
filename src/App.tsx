@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import BookingPage from "./pages/BookingPage";
 import MyAppointments from "./pages/MyAppointments";
 import AdminPage from "./pages/AdminPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/reservar" element={<BookingPage />} />
             <Route path="/mis-citas" element={<MyAppointments />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
