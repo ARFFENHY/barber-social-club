@@ -204,7 +204,7 @@ export default function BookingPage() {
       if (error) {
         if (error.code === "23505") {
           fetchAppointments();
-          fetchMonthCounts();
+          
           setStep(3);
           setSelectedTime(null);
           toast({ title: "Turno no disponible", description: "Ese horario acaba de ser reservado. Elegí otro.", variant: "destructive" });
