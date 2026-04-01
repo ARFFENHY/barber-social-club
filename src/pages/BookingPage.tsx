@@ -102,27 +102,6 @@ export default function BookingPage() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchAppointments]);
 
-  // Fetch appointment counts per day for the visible month
-  const fetchMonthCounts = useCallback(async () => {
-    if (!selectedBarber) return;
-    const now = new Date();
-    const startDate = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
-    const endDate = format(new Date(now.getFullYear(), now.getMonth() + 2, 0), "yyyy-MM-dd");
-    const { data } = await supabase
-      .from("appointments")
-      .select("date, time")
-      .eq("barber_id", selectedBarber)
-      .gte("date", startDate)
-      .lte("date", endDate)
-      .neq("status", "cancelled");
-    const counts: Record<string, number> = {};
-    data?.forEach((a) => {
-      counts[a.date] = (counts[a.date] || 0) + 1;
-    });
-    setMonthAppointmentCounts(counts);
-  }, [selectedBarber]);
-
-  useEffect(() => { fetchMonthCounts(); }, [fetchMonthCounts]);
 
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
