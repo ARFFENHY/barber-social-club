@@ -378,29 +378,6 @@ export default function BookingPage() {
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || !isWorkingDay(date)}
                     initialFocus
                     className="p-3 pointer-events-auto"
-                    components={{
-                      DayContent: ({ date, ...props }) => {
-                        const dateKey = format(date, "yyyy-MM-dd");
-                        const dow = date.getDay();
-                        const total = totalSlotsPerDow[dow] || 0;
-                        const booked = monthAppointmentCounts[dateKey] || 0;
-                        const available = Math.max(0, total - booked);
-                        const isDisabled = date < new Date(new Date().setHours(0, 0, 0, 0)) || !isWorkingDay(date);
-                        return (
-                          <div className="flex flex-col items-center">
-                            <span>{date.getDate()}</span>
-                            {!isDisabled && total > 0 && (
-                              <span className={cn(
-                                "text-[9px] leading-none font-medium",
-                                available === 0 ? "text-destructive" : available <= 3 ? "text-yellow-500" : "text-green-500"
-                              )}>
-                                {available}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }
-                    }}
                   />
                 </PopoverContent>
               </Popover>
