@@ -97,7 +97,6 @@ export default function BookingPage() {
       .channel("booking-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
         fetchAppointments();
-        fetchMonthCounts();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
