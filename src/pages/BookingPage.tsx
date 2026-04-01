@@ -58,7 +58,7 @@ export default function BookingPage() {
   const [phoneInput, setPhoneInput] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
   const [bookedAppointments, setBookedAppointments] = useState<any[]>([]);
-  const [monthAppointmentCounts, setMonthAppointmentCounts] = useState<Record<string, number>>({});
+  
 
   // Load user phone from profile
   useEffect(() => {
@@ -97,33 +97,11 @@ export default function BookingPage() {
       .channel("booking-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
         fetchAppointments();
-        fetchMonthCounts();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchAppointments]);
 
-  // Fetch appointment counts per day for the visible month
-  const fetchMonthCounts = useCallback(async () => {
-    if (!selectedBarber) return;
-    const now = new Date();
-    const startDate = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
-    const endDate = format(new Date(now.getFullYear(), now.getMonth() + 2, 0), "yyyy-MM-dd");
-    const { data } = await supabase
-      .from("appointments")
-      .select("date, time")
-      .eq("barber_id", selectedBarber)
-      .gte("date", startDate)
-      .lte("date", endDate)
-      .neq("status", "cancelled");
-    const counts: Record<string, number> = {};
-    data?.forEach((a) => {
-      counts[a.date] = (counts[a.date] || 0) + 1;
-    });
-    setMonthAppointmentCounts(counts);
-  }, [selectedBarber]);
-
-  useEffect(() => { fetchMonthCounts(); }, [fetchMonthCounts]);
 
   const slotDuration = settings?.slot_duration?.minutes || 30;
   const selectedServiceData = services?.find((s) => s.id === selectedService);
@@ -174,15 +152,6 @@ export default function BookingPage() {
     }
   });
 
-  // Calculate total slots per day of week for calendar badge
-  const totalSlotsPerDow = useMemo(() => {
-    const result: Record<number, number> = {};
-    for (const [dayStr, blocks] of Object.entries(scheduleBlocks)) {
-      const day = Number(dayStr);
-      result[day] = generateTimeSlotsFromBlocks(blocks, slotDuration).length;
-    }
-    return result;
-  }, [scheduleBlocks, slotDuration]);
 
   const isWorkingDay = (date: Date) => {
     if (!selectedBarber) return false;
@@ -235,7 +204,7 @@ export default function BookingPage() {
       if (error) {
         if (error.code === "23505") {
           fetchAppointments();
-          fetchMonthCounts();
+          
           setStep(3);
           setSelectedTime(null);
           toast({ title: "Turno no disponible", description: "Ese horario acaba de ser reservado. Elegí otro.", variant: "destructive" });
@@ -409,29 +378,6 @@ export default function BookingPage() {
                     disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0)) || !isWorkingDay(date)}
                     initialFocus
                     className="p-3 pointer-events-auto"
-                    components={{
-                      DayContent: ({ date, ...props }) => {
-                        const dateKey = format(date, "yyyy-MM-dd");
-                        const dow = date.getDay();
-                        const total = totalSlotsPerDow[dow] || 0;
-                        const booked = monthAppointmentCounts[dateKey] || 0;
-                        const available = Math.max(0, total - booked);
-                        const isDisabled = date < new Date(new Date().setHours(0, 0, 0, 0)) || !isWorkingDay(date);
-                        return (
-                          <div className="flex flex-col items-center">
-                            <span>{date.getDate()}</span>
-                            {!isDisabled && total > 0 && (
-                              <span className={cn(
-                                "text-[9px] leading-none font-medium",
-                                available === 0 ? "text-destructive" : available <= 3 ? "text-yellow-500" : "text-green-500"
-                              )}>
-                                {available}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }
-                    }}
                   />
                 </PopoverContent>
               </Popover>
@@ -456,7 +402,7 @@ export default function BookingPage() {
                                 ? "border-destructive/30 bg-destructive/10 text-destructive/60 cursor-not-allowed line-through"
                                 : selectedTime === slot
                                   ? "border-primary bg-primary text-primary-foreground scale-105 shadow-lg"
-                                  : "border-green-600/40 bg-green-900/10 text-green-400 hover:border-green-500 hover:bg-green-900/20 hover:scale-[1.02]"
+                                  : "border-accent bg-accent/10 text-accent-foreground hover:border-primary/50 hover:bg-accent/20 hover:scale-[1.02]"
                             )}
                           >
                             <span className="block">{slot}</span>
