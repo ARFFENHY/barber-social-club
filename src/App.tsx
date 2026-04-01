@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import BookingPage from "./pages/BookingPage";
 import MyAppointments from "./pages/MyAppointments";
 import AdminPage from "./pages/AdminPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
