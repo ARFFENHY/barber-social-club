@@ -20,7 +20,41 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetCooldown, setResetCooldown] = useState(0);
+  const [lastResetEmail, setLastResetEmail] = useState("");
   const { signIn, signUp } = useAuth();
+
+  // Cooldown timer for password reset email resend
+  useEffect(() => {
+    if (resetCooldown <= 0) return;
+    const t = setInterval(() => setResetCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [resetCooldown]);
+
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      toast({ title: "Ingresá tu email", description: "Escribí tu email arriba para recibir el enlace de recuperación", variant: "destructive" });
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setLastResetEmail(email.trim());
+      setResetCooldown(30);
+      toast({
+        title: "Email enviado",
+        description: `Revisá la bandeja de entrada de ${email.trim()} (y también spam). Podés reenviarlo en 30 segundos si no llega.`,
+      });
+    } catch (err: any) {
+      toast({ title: "Error al enviar", description: err.message || "No pudimos enviar el email. Intentá de nuevo.", variant: "destructive" });
+    } finally {
+      setResetLoading(false);
+    }
+  };
   const { toast } = useToast();
   const navigate = useNavigate();
 
