@@ -175,28 +175,35 @@ export default function AuthPage() {
               </div>
             </div>
             {isLogin && (
-              <div className="text-right">
-                <button
-                  type="button"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  onClick={async () => {
-                    if (!email.trim()) {
-                      toast({ title: "Ingresá tu email", description: "Escribí tu email arriba y luego hacé clic en 'Olvidé mi contraseña'", variant: "destructive" });
-                      return;
-                    }
-                    try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${window.location.origin}/reset-password`,
-                      });
-                      if (error) throw error;
-                      toast({ title: "Email enviado", description: "Revisá tu bandeja de entrada para restablecer tu contraseña" });
-                    } catch (err: any) {
-                      toast({ title: "Error", description: err.message, variant: "destructive" });
-                    }
-                  }}
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
+              <div className="space-y-2">
+                <div className="text-right">
+                  <button
+                    type="button"
+                    disabled={resetLoading || resetCooldown > 0}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handlePasswordReset}
+                  >
+                    {resetLoading
+                      ? "Enviando..."
+                      : resetCooldown > 0
+                        ? `Reenviar en ${resetCooldown}s`
+                        : "¿Olvidaste tu contraseña?"}
+                  </button>
+                </div>
+                {lastResetEmail && resetCooldown === 0 && !resetLoading && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => {
+                        setEmail(lastResetEmail);
+                        handlePasswordReset();
+                      }}
+                    >
+                      Reenviar email a {lastResetEmail}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
