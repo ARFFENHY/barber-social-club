@@ -47,40 +47,25 @@ export default function AuthPage() {
     try {
       const password = await derivePassword(cleanEmail);
 
-      if (isLogin) {
-        // Try to sign in directly; if the account doesn't exist, create it on the fly.
-        let { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password,
-            options: {
-              emailRedirectTo: window.location.origin,
-              data: { full_name: cleanEmail.split("@")[0], phone: "" },
-            },
-          });
-          if (signUpError) throw signUpError;
-          // Try sign in again after creating
-          const retry = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-          if (retry.error) throw retry.error;
-        }
-        toast({ title: "¡Bienvenido!" });
-        navigate("/");
-      } else {
-        const { error } = await supabase.auth.signUp({
+      // Ensure user exists with derived password (creates if missing, resets if existing).
+      const { data: prep, error: prepError } = await supabase.functions.invoke("email-login", {
+        body: {
           email: cleanEmail,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { full_name: fullName.trim(), phone: phone.trim() },
-          },
-        });
-        if (error) throw error;
-        const signIn = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (signIn.error) throw signIn.error;
-        toast({ title: "Cuenta creada" });
-        navigate("/");
-      }
+          full_name: isLogin ? undefined : fullName.trim(),
+          phone: isLogin ? undefined : phone.trim(),
+        },
+      });
+      if (prepError) throw prepError;
+      if (prep?.error) throw new Error(prep.error);
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+      if (signInError) throw signInError;
+
+      toast({ title: isLogin ? "¡Bienvenido!" : "Cuenta creada" });
+      navigate("/");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
