@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,28 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Scissors } from "lucide-react";
 
+// Deterministic password derived from email so the user only needs to type their email.
+async function derivePassword(email: string): Promise<string> {
+  const enc = new TextEncoder().encode(`bsc::${email.toLowerCase().trim()}::v1`);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
 
     if (!isLogin) {
       if (!fullName.trim()) {
@@ -28,27 +38,49 @@ export default function AuthPage() {
         return;
       }
       if (!phone.trim()) {
-        toast({ title: "Error", description: "Ingresá tu número de teléfono", variant: "destructive" });
+        toast({ title: "Error", description: "Ingresá tu teléfono", variant: "destructive" });
         return;
       }
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: window.location.origin,
-          data: !isLogin ? { full_name: fullName, phone: phone.trim() } : undefined,
-        },
-      });
-      if (error) throw error;
-      setSent(true);
-      toast({
-        title: "Email enviado",
-        description: `Te mandamos un enlace de acceso a ${email.trim()}. Revisá tu bandeja de entrada (y spam).`,
-      });
+      const password = await derivePassword(cleanEmail);
+
+      if (isLogin) {
+        // Try to sign in directly; if the account doesn't exist, create it on the fly.
+        let { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+        if (error) {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              emailRedirectTo: window.location.origin,
+              data: { full_name: cleanEmail.split("@")[0], phone: "" },
+            },
+          });
+          if (signUpError) throw signUpError;
+          // Try sign in again after creating
+          const retry = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+          if (retry.error) throw retry.error;
+        }
+        toast({ title: "¡Bienvenido!" });
+        navigate("/");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { full_name: fullName.trim(), phone: phone.trim() },
+          },
+        });
+        if (error) throw error;
+        const signIn = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+        if (signIn.error) throw signIn.error;
+        toast({ title: "Cuenta creada" });
+        navigate("/");
+      }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -67,65 +99,45 @@ export default function AuthPage() {
             {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
           </CardTitle>
           <CardDescription>
-            {isLogin
-              ? "Ingresá tu email para acceder"
-              : "Registrate para reservar tu turno"}
+            {isLogin ? "Ingresá tu email para acceder" : "Registrate para reservar tu turno"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {sent ? (
-            <div className="space-y-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                Te enviamos un enlace de acceso a <strong className="text-foreground">{email}</strong>.
-                Abrí el email y hacé clic en el enlace para ingresar.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => setSent(false)}
-              >
-                Usar otro email
-              </Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre completo *</Label>
+                  <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre completo" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s\-()]/g, ""))}
+                    placeholder="Ej: +54 11 7005 5858"
+                    required
+                    minLength={8}
+                  />
+                </div>
+              </>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" required />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre completo *</Label>
-                    <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tu nombre completo" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Teléfono *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\s\-()]/g, ""))}
-                      placeholder="Ej: +54 11 7005 5858"
-                      required
-                      minLength={8}
-                    />
-                    <p className="text-xs text-muted-foreground">Formato: +54 11 7005 5858</p>
-                  </div>
-                </>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" required />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Enviando..." : isLogin ? "Enviar enlace de acceso" : "Crear cuenta"}
-              </Button>
-            </form>
-          )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Cargando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+            </Button>
+          </form>
 
           <div className="mt-4 text-center">
             <button
               type="button"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => { setIsLogin(!isLogin); setSent(false); }}
+              onClick={() => setIsLogin(!isLogin)}
             >
               {isLogin ? "¿No tenés cuenta? Registrate" : "¿Ya tenés cuenta? Iniciá sesión"}
             </button>
