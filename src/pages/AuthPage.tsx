@@ -174,38 +174,6 @@ export default function AuthPage() {
                 </button>
               </div>
             </div>
-            {isLogin && (
-              <div className="space-y-2">
-                <div className="text-right">
-                  <button
-                    type="button"
-                    disabled={resetLoading || resetCooldown > 0}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handlePasswordReset}
-                  >
-                    {resetLoading
-                      ? "Enviando..."
-                      : resetCooldown > 0
-                        ? `Reenviar en ${resetCooldown}s`
-                        : "¿Olvidaste tu contraseña?"}
-                  </button>
-                </div>
-                {lastResetEmail && resetCooldown === 0 && !resetLoading && (
-                  <div className="text-right">
-                    <button
-                      type="button"
-                      className="text-xs text-primary hover:underline"
-                      onClick={() => {
-                        setEmail(lastResetEmail);
-                        handlePasswordReset();
-                      }}
-                    >
-                      Reenviar email a {lastResetEmail}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Cargando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
             </Button>
