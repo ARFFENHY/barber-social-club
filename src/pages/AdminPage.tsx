@@ -51,6 +51,9 @@ function AdminDashboard() {
   const [barberFilter, setBarberFilter] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
+  const [nextFromAppointment, setNextFromAppointment] = useState<any | null>(null);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [createForClient, setCreateForClient] = useState<any | null>(null);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const { toast } = useToast();
   const queryClient = useQueryClient();
