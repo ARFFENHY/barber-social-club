@@ -338,25 +338,66 @@ export default function AdminCalendar() {
                     {STATUS_CONFIG[selectedAppointment.status]?.label}
                   </Badge>
                 </div>
+                {selectedAppointment.profile?.visit_frequency_days && (
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground text-xs">Frecuencia habitual</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <Repeat className="w-3 h-3 text-primary" />
+                      Cada {selectedAppointment.profile.visit_frequency_days} días
+                    </p>
+                  </div>
+                )}
+                {selectedAppointment.profile?.permanent_notes && (
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground text-xs">Notas del cliente</p>
+                    <p className="text-sm bg-muted/40 border border-border rounded-md p-2 whitespace-pre-wrap">
+                      {selectedAppointment.profile.permanent_notes}
+                    </p>
+                  </div>
+                )}
+                {selectedAppointment.notes && (
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground text-xs flex items-center gap-1">
+                      <StickyNote className="w-3 h-3" /> Notas del turno
+                    </p>
+                    <p className="text-sm bg-muted/40 border border-border rounded-md p-2 whitespace-pre-wrap">
+                      {selectedAppointment.notes}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
-              {selectedAppointment.status !== "cancelled" && selectedAppointment.status !== "completed" && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                  <Button size="sm" className="flex-1" onClick={() => updateStatus(selectedAppointment, "completed")}>
-                    <CheckCircle className="w-4 h-4 mr-1" /> Completada
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => {
-                    setEditingAppointment(selectedAppointment);
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                {selectedAppointment.status !== "cancelled" && selectedAppointment.status !== "completed" && (
+                  <>
+                    <Button size="sm" className="flex-1 min-w-[120px]" onClick={() => updateStatus(selectedAppointment, "completed")}>
+                      <CheckCircle className="w-4 h-4 mr-1" /> Completada
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 min-w-[100px]" onClick={() => {
+                      setEditingAppointment(selectedAppointment);
+                      setSelectedAppointment(null);
+                    }}>
+                      <Edit className="w-4 h-4 mr-1" /> Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" className="flex-1 min-w-[100px]" onClick={() => setCancelTarget(selectedAppointment)}>
+                      <X className="w-4 h-4 mr-1" /> Cancelar
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setNextFromAppointment(selectedAppointment);
                     setSelectedAppointment(null);
-                  }}>
-                    <Edit className="w-4 h-4 mr-1" /> Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" className="flex-1" onClick={() => setCancelTarget(selectedAppointment)}>
-                    <X className="w-4 h-4 mr-1" /> Cancelar
-                  </Button>
-                </div>
-              )}
+                  }}
+                >
+                  <Repeat className="w-4 h-4 mr-1" /> Crear próximo turno
+                </Button>
+              </div>
+
             </div>
           </DialogContent>
         </Dialog>
