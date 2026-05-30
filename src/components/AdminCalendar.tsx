@@ -18,10 +18,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ChevronLeft, ChevronRight, CalendarIcon, Scissors, Users,
-  CheckCircle, X, Edit, Clock,
+  CheckCircle, X, Edit, Clock, Repeat, StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminEditAppointment from "@/components/AdminEditAppointment";
+import AdminCreateAppointment from "@/components/AdminCreateAppointment";
 
 type ViewMode = "day" | "week" | "month";
 
@@ -37,6 +38,7 @@ export default function AdminCalendar() {
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
+  const [nextFromAppointment, setNextFromAppointment] = useState<any | null>(null);
   const [cancelTarget, setCancelTarget] = useState<any | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
