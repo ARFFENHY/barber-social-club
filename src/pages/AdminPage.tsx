@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
   TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings, Edit, Trash2, History,
-  UserCheck, RefreshCw, DollarSign, Type, Palette,
+  UserCheck, RefreshCw, DollarSign, Type, Palette, Repeat, AlertTriangle, StickyNote, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
@@ -32,6 +32,8 @@ import AdminNotificationToggle from "@/components/AdminNotificationToggle";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
 import AdminColorPanel from "@/components/AdminColorPanel";
+import AdminClientEdit from "@/components/AdminClientEdit";
+import AdminCreateAppointment from "@/components/AdminCreateAppointment";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
@@ -49,6 +51,9 @@ function AdminDashboard() {
   const [barberFilter, setBarberFilter] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
+  const [nextFromAppointment, setNextFromAppointment] = useState<any | null>(null);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [createForClient, setCreateForClient] = useState<any | null>(null);
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -75,7 +80,7 @@ function AdminDashboard() {
       if (userIds.length === 0) return data || [];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone")
+        .select("user_id, full_name, phone, permanent_notes, visit_frequency_days")
         .in("user_id", userIds);
       const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
       return data?.map((a) => ({ ...a, profile: profileMap.get(a.user_id) || null })) || [];
@@ -97,7 +102,7 @@ function AdminDashboard() {
       if (userIds.length === 0) return data || [];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone")
+        .select("user_id, full_name, phone, permanent_notes, visit_frequency_days")
         .in("user_id", userIds);
       const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
       return data?.map((a) => ({ ...a, profile: profileMap.get(a.user_id) || null })) || [];
@@ -133,20 +138,26 @@ function AdminDashboard() {
     enabled: !!selectedClient,
   });
 
-  // All appointments for client counts
-  const { data: allAppointmentCounts } = useQuery({
+  // All appointments for client counts + last visit
+  const { data: clientStats } = useQuery({
     queryKey: ["admin_appointment_counts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("user_id, status")
-        .neq("status", "cancelled");
+        .select("user_id, status, date")
+        .neq("status", "cancelled")
+        .order("date", { ascending: false });
       if (error) throw error;
       const counts: Record<string, number> = {};
-      data?.forEach((a) => { counts[a.user_id] = (counts[a.user_id] || 0) + 1; });
-      return counts;
+      const lastDates: Record<string, string> = {};
+      data?.forEach((a) => {
+        counts[a.user_id] = (counts[a.user_id] || 0) + 1;
+        if (!lastDates[a.user_id] || a.date > lastDates[a.user_id]) lastDates[a.user_id] = a.date;
+      });
+      return { counts, lastDates };
     },
   });
+  const allAppointmentCounts = clientStats?.counts;
 
   // Earnings data
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -278,8 +289,18 @@ function AdminDashboard() {
                   ${(apt.services as any)?.price?.toLocaleString("es-AR")}
                 </span>
               </div>
+              {apt.notes && (
+                <p className="text-xs text-muted-foreground italic flex items-start gap-1 mt-1 bg-muted/30 rounded p-1.5">
+                  <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="whitespace-pre-wrap">{apt.notes}</span>
+                </p>
+              )}
             </div>
             <div className="flex gap-1 flex-shrink-0 flex-wrap">
+              <Button variant="ghost" size="sm" className="text-primary/80 hover:text-primary"
+                onClick={() => setNextFromAppointment(apt)} title="Crear próximo turno">
+                <Repeat className="w-4 h-4" />
+              </Button>
               {/* Confirm */}
               {(apt.status === "pending" || apt.status === "confirmed") && apt.status !== "completed" && (
                 <>
@@ -680,7 +701,10 @@ function AdminDashboard() {
             <ClientDetail
               client={allClients?.find((c) => c.user_id === selectedClient)}
               history={clientHistory}
+              lastVisitDate={clientStats?.lastDates?.[selectedClient]}
               onBack={() => setSelectedClient(null)}
+              onEdit={(c) => setEditingClient(c)}
+              onCreateNext={(c) => setCreateForClient(c)}
               onCancel={(id) => {
                 const apt = clientHistory?.find((a) => a.id === id);
                 if (apt) updateStatus(apt, "cancelled");
@@ -695,14 +719,31 @@ function AdminDashboard() {
                 <div className="space-y-1">
                   {allClients?.map((client) => {
                     const count = allAppointmentCounts?.[client.user_id] || 0;
+                    const lastDate = clientStats?.lastDates?.[client.user_id];
+                    const freq = (client as any).visit_frequency_days as number | null;
+                    let dueAlert: { label: string; tone: "due" | "overdue" } | null = null;
+                    if (freq && lastDate) {
+                      const last = new Date(lastDate + "T12:00:00");
+                      const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+                      const daysToNext = freq - daysSince;
+                      if (daysToNext <= 0) dueAlert = { label: `Vencido hace ${-daysToNext}d`, tone: "overdue" };
+                      else if (daysToNext <= 3) dueAlert = { label: `En ${daysToNext}d`, tone: "due" };
+                    }
                     return (
                       <button
                         key={client.id}
                         onClick={() => setSelectedClient(client.user_id)}
-                        className="w-full flex items-center justify-between py-3 px-3 rounded-lg border-b border-border last:border-0 hover:bg-muted/50 transition-colors text-left"
+                        className={cn(
+                          "w-full flex items-center justify-between py-3 px-3 rounded-lg border-b border-border last:border-0 hover:bg-muted/50 transition-colors text-left",
+                          dueAlert?.tone === "overdue" && "bg-destructive/10 border-destructive/40 hover:bg-destructive/15",
+                          dueAlert?.tone === "due" && "bg-primary/5 border-primary/30 hover:bg-primary/10",
+                        )}
                       >
                         <div>
-                          <p className="font-medium">{client.full_name || "Sin nombre"}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            {client.full_name || "Sin nombre"}
+                            {freq && <Badge variant="outline" className="text-[10px] gap-1"><Repeat className="w-2.5 h-2.5" />{freq}d</Badge>}
+                          </p>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             {client.phone ? (
                               <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>
@@ -710,6 +751,17 @@ function AdminDashboard() {
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
+                          {dueAlert && (
+                            <Badge variant="outline" className={cn(
+                              "text-xs gap-1",
+                              dueAlert.tone === "overdue"
+                                ? "bg-destructive/20 text-destructive border-destructive/50"
+                                : "bg-primary/20 text-primary border-primary/50",
+                            )}>
+                              <AlertTriangle className="w-3 h-3" />
+                              {dueAlert.label}
+                            </Badge>
+                          )}
                           <div className="text-right">
                             <p className="text-sm font-bold text-primary">{count} citas</p>
                             <p className="text-xs text-muted-foreground">
@@ -760,39 +812,132 @@ function AdminDashboard() {
           onOpenChange={(open) => { if (!open) setEditingAppointment(null); }}
         />
       )}
+
+      {/* Create next appointment (from existing appointment) */}
+      {nextFromAppointment && (
+        <AdminCreateAppointment
+          open={!!nextFromAppointment}
+          onOpenChange={(open) => { if (!open) setNextFromAppointment(null); }}
+          fromAppointment={nextFromAppointment}
+        />
+      )}
+
+      {/* Create appointment for a client (from client card) */}
+      {createForClient && (
+        <AdminCreateAppointment
+          open={!!createForClient}
+          onOpenChange={(open) => { if (!open) setCreateForClient(null); }}
+          client={createForClient}
+        />
+      )}
+
+      {/* Edit client card */}
+      {editingClient && (
+        <AdminClientEdit
+          client={editingClient}
+          open={!!editingClient}
+          onOpenChange={(open) => { if (!open) setEditingClient(null); }}
+        />
+      )}
     </>
   );
 }
 
-function ClientDetail({ client, history, onBack, onCancel }: {
-  client: any; history: any[] | undefined; onBack: () => void; onCancel: (id: string) => void;
+function ClientDetail({ client, history, lastVisitDate, onBack, onCancel, onEdit, onCreateNext }: {
+  client: any;
+  history: any[] | undefined;
+  lastVisitDate?: string;
+  onBack: () => void;
+  onCancel: (id: string) => void;
+  onEdit: (client: any) => void;
+  onCreateNext: (client: any) => void;
 }) {
   if (!client) return null;
   const phone = client.phone?.replace(/\D/g, "");
+  const freq = client.visit_frequency_days as number | null;
+
+  let dueAlert: { label: string; tone: "due" | "overdue" } | null = null;
+  if (freq && lastVisitDate) {
+    const last = new Date(lastVisitDate + "T12:00:00");
+    const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+    const daysToNext = freq - daysSince;
+    if (daysToNext <= 0) dueAlert = { label: `Vencido hace ${-daysToNext} días — necesita nuevo turno`, tone: "overdue" };
+    else if (daysToNext <= 3) dueAlert = { label: `Próximo turno sugerido en ${daysToNext} días`, tone: "due" };
+  }
 
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onBack}>← Volver a clientes</Button>
+
+      {dueAlert && (
+        <div className={cn(
+          "rounded-lg border p-3 flex items-center gap-2 text-sm",
+          dueAlert.tone === "overdue"
+            ? "bg-destructive/15 border-destructive/40 text-destructive"
+            : "bg-primary/10 border-primary/40 text-primary",
+        )}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium">{dueAlert.label}</span>
+        </div>
+      )}
+
       <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start justify-between flex-wrap gap-2">
             <div>
               <h3 className="font-display text-xl font-bold">{client.full_name || "Sin nombre"}</h3>
               <p className="text-muted-foreground text-sm">
                 Cliente desde {format(new Date(client.created_at), "d 'de' MMMM yyyy", { locale: es })}
               </p>
             </div>
-            {phone && (
-              <a href={`https://wa.me/54${phone}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm"><MessageCircle className="w-4 h-4 mr-1" />WhatsApp</Button>
-              </a>
-            )}
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => onEdit(client)}>
+                <Edit className="w-4 h-4 mr-1" /> Editar ficha
+              </Button>
+              <Button size="sm" onClick={() => onCreateNext(client)}>
+                <Plus className="w-4 h-4 mr-1" /> Nuevo turno
+              </Button>
+              {phone && (
+                <a href={`https://wa.me/54${phone}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm"><MessageCircle className="w-4 h-4 mr-1" />WhatsApp</Button>
+                </a>
+              )}
+            </div>
           </div>
-          {client.phone && (
-            <p className="text-sm mt-2 flex items-center gap-1 text-muted-foreground">
-              <Phone className="w-3 h-3" /> {client.phone}
-            </p>
-          )}
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground text-xs">Teléfono</p>
+              <p className="font-medium flex items-center gap-1">
+                <Phone className="w-3 h-3" /> {client.phone || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Frecuencia habitual</p>
+              <p className="font-medium flex items-center gap-1">
+                <Repeat className="w-3 h-3 text-primary" />
+                {freq ? `Cada ${freq} días` : "No definida"}
+              </p>
+            </div>
+            {lastVisitDate && (
+              <div className="col-span-2">
+                <p className="text-muted-foreground text-xs">Última visita</p>
+                <p className="font-medium">{format(new Date(lastVisitDate + "T12:00:00"), "d 'de' MMMM yyyy", { locale: es })}</p>
+              </div>
+            )}
+            <div className="col-span-2">
+              <p className="text-muted-foreground text-xs flex items-center gap-1">
+                <StickyNote className="w-3 h-3" /> Notas permanentes
+              </p>
+              {client.permanent_notes ? (
+                <p className="text-sm bg-muted/40 border border-border rounded-md p-2 mt-1 whitespace-pre-wrap">
+                  {client.permanent_notes}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic mt-1">Sin notas</p>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
       <Card className="border-border">

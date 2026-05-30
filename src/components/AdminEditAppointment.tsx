@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,7 @@ export default function AdminEditAppointment({ appointment, open, onOpenChange }
   const [serviceId, setServiceId] = useState(appointment.service_id);
   const [date, setDate] = useState<Date | undefined>(new Date(appointment.date + "T12:00:00"));
   const [time, setTime] = useState(appointment.time.slice(0, 5));
+  const [notes, setNotes] = useState<string>(appointment.notes || "");
   const [saving, setSaving] = useState(false);
 
   const slotDuration = settings?.slot_duration?.minutes || 30;
@@ -95,6 +97,7 @@ export default function AdminEditAppointment({ appointment, open, onOpenChange }
           date: newDate,
           time: newTime,
           payment_amount: selectedService?.price || appointment.payment_amount,
+          notes: notes || null,
         })
         .eq("id", appointment.id);
 
@@ -209,6 +212,18 @@ export default function AdminEditAppointment({ appointment, open, onOpenChange }
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Notas</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notas sobre este turno"
+              rows={3}
+              maxLength={1000}
+            />
+          </div>
+
 
           <div className="flex gap-2 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancelar</Button>
