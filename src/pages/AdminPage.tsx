@@ -701,7 +701,10 @@ function AdminDashboard() {
             <ClientDetail
               client={allClients?.find((c) => c.user_id === selectedClient)}
               history={clientHistory}
+              lastVisitDate={clientStats?.lastDates?.[selectedClient]}
               onBack={() => setSelectedClient(null)}
+              onEdit={(c) => setEditingClient(c)}
+              onCreateNext={(c) => setCreateForClient(c)}
               onCancel={(id) => {
                 const apt = clientHistory?.find((a) => a.id === id);
                 if (apt) updateStatus(apt, "cancelled");
@@ -716,14 +719,31 @@ function AdminDashboard() {
                 <div className="space-y-1">
                   {allClients?.map((client) => {
                     const count = allAppointmentCounts?.[client.user_id] || 0;
+                    const lastDate = clientStats?.lastDates?.[client.user_id];
+                    const freq = (client as any).visit_frequency_days as number | null;
+                    let dueAlert: { label: string; tone: "due" | "overdue" } | null = null;
+                    if (freq && lastDate) {
+                      const last = new Date(lastDate + "T12:00:00");
+                      const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+                      const daysToNext = freq - daysSince;
+                      if (daysToNext <= 0) dueAlert = { label: `Vencido hace ${-daysToNext}d`, tone: "overdue" };
+                      else if (daysToNext <= 3) dueAlert = { label: `En ${daysToNext}d`, tone: "due" };
+                    }
                     return (
                       <button
                         key={client.id}
                         onClick={() => setSelectedClient(client.user_id)}
-                        className="w-full flex items-center justify-between py-3 px-3 rounded-lg border-b border-border last:border-0 hover:bg-muted/50 transition-colors text-left"
+                        className={cn(
+                          "w-full flex items-center justify-between py-3 px-3 rounded-lg border-b border-border last:border-0 hover:bg-muted/50 transition-colors text-left",
+                          dueAlert?.tone === "overdue" && "bg-destructive/10 border-destructive/40 hover:bg-destructive/15",
+                          dueAlert?.tone === "due" && "bg-primary/5 border-primary/30 hover:bg-primary/10",
+                        )}
                       >
                         <div>
-                          <p className="font-medium">{client.full_name || "Sin nombre"}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            {client.full_name || "Sin nombre"}
+                            {freq && <Badge variant="outline" className="text-[10px] gap-1"><Repeat className="w-2.5 h-2.5" />{freq}d</Badge>}
+                          </p>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             {client.phone ? (
                               <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>
@@ -731,6 +751,17 @@ function AdminDashboard() {
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
+                          {dueAlert && (
+                            <Badge variant="outline" className={cn(
+                              "text-xs gap-1",
+                              dueAlert.tone === "overdue"
+                                ? "bg-destructive/20 text-destructive border-destructive/50"
+                                : "bg-primary/20 text-primary border-primary/50",
+                            )}>
+                              <AlertTriangle className="w-3 h-3" />
+                              {dueAlert.label}
+                            </Badge>
+                          )}
                           <div className="text-right">
                             <p className="text-sm font-bold text-primary">{count} citas</p>
                             <p className="text-xs text-muted-foreground">
