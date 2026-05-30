@@ -289,8 +289,18 @@ function AdminDashboard() {
                   ${(apt.services as any)?.price?.toLocaleString("es-AR")}
                 </span>
               </div>
+              {apt.notes && (
+                <p className="text-xs text-muted-foreground italic flex items-start gap-1 mt-1 bg-muted/30 rounded p-1.5">
+                  <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="whitespace-pre-wrap">{apt.notes}</span>
+                </p>
+              )}
             </div>
             <div className="flex gap-1 flex-shrink-0 flex-wrap">
+              <Button variant="ghost" size="sm" className="text-primary/80 hover:text-primary"
+                onClick={() => setNextFromAppointment(apt)} title="Crear próximo turno">
+                <Repeat className="w-4 h-4" />
+              </Button>
               {/* Confirm */}
               {(apt.status === "pending" || apt.status === "confirmed") && apt.status !== "completed" && (
                 <>
