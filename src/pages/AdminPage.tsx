@@ -135,20 +135,26 @@ function AdminDashboard() {
     enabled: !!selectedClient,
   });
 
-  // All appointments for client counts
-  const { data: allAppointmentCounts } = useQuery({
+  // All appointments for client counts + last visit
+  const { data: clientStats } = useQuery({
     queryKey: ["admin_appointment_counts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("user_id, status")
-        .neq("status", "cancelled");
+        .select("user_id, status, date")
+        .neq("status", "cancelled")
+        .order("date", { ascending: false });
       if (error) throw error;
       const counts: Record<string, number> = {};
-      data?.forEach((a) => { counts[a.user_id] = (counts[a.user_id] || 0) + 1; });
-      return counts;
+      const lastDates: Record<string, string> = {};
+      data?.forEach((a) => {
+        counts[a.user_id] = (counts[a.user_id] || 0) + 1;
+        if (!lastDates[a.user_id] || a.date > lastDates[a.user_id]) lastDates[a.user_id] = a.date;
+      });
+      return { counts, lastDates };
     },
   });
+  const allAppointmentCounts = clientStats?.counts;
 
   // Earnings data
   const todayStr = format(new Date(), "yyyy-MM-dd");
