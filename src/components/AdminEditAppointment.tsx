@@ -213,6 +213,18 @@ export default function AdminEditAppointment({ appointment, open, onOpenChange }
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label>Notas</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notas sobre este turno"
+              rows={3}
+              maxLength={1000}
+            />
+          </div>
+
+
           <div className="flex gap-2 pt-2">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button className="flex-1" onClick={handleSave} disabled={saving || !date || !time}>
