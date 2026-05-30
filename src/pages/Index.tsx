@@ -26,9 +26,22 @@ const NAV_LINKS = [
 
 export default function Index() {
   const { user, isAdmin, signOut } = useAuth();
-  const { data: services } = useServices();
-  const { data: settings } = useShopSettings();
+  const { data: services, isLoading: servicesLoading } = useServices();
+  const { data: settings, isLoading: settingsLoading } = useShopSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (settingsLoading || servicesLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <img src={bscLogo} alt="BSC" className="w-20 h-20 rounded-full object-cover opacity-90 animate-pulse" />
+          <div className="h-1 w-32 rounded-full bg-muted overflow-hidden">
+            <div className="h-full w-1/2 bg-primary animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const s = settings || {};
   const logoUrl = s.logo_url || bscLogo;
