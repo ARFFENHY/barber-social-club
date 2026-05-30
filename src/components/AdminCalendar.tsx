@@ -432,6 +432,15 @@ export default function AdminCalendar() {
           onOpenChange={(open) => { if (!open) setEditingAppointment(null); }}
         />
       )}
+
+      {/* Create next appointment dialog */}
+      {nextFromAppointment && (
+        <AdminCreateAppointment
+          open={!!nextFromAppointment}
+          onOpenChange={(open) => { if (!open) setNextFromAppointment(null); }}
+          fromAppointment={nextFromAppointment}
+        />
+      )}
     </div>
   );
 }
