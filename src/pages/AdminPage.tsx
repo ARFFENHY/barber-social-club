@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CalendarIcon, Scissors, Users, BarChart3, Clock, ArrowLeft, X,
   TrendingUp, CheckCircle, Eye, Phone, MessageCircle, Settings, Edit, Trash2, History,
-  UserCheck, RefreshCw, DollarSign, Type, Palette,
+  UserCheck, RefreshCw, DollarSign, Type, Palette, Repeat, AlertTriangle, StickyNote, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminScheduleSettings from "@/components/AdminScheduleSettings";
@@ -32,6 +32,8 @@ import AdminNotificationToggle from "@/components/AdminNotificationToggle";
 import AdminPushNotifications from "@/components/AdminPushNotifications";
 import AdminCalendar from "@/components/AdminCalendar";
 import AdminColorPanel from "@/components/AdminColorPanel";
+import AdminClientEdit from "@/components/AdminClientEdit";
+import AdminCreateAppointment from "@/components/AdminCreateAppointment";
 import NotificationBell from "@/components/NotificationBell";
 
 type ViewMode = "day" | "week";
