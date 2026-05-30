@@ -233,25 +233,31 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          permanent_notes: string | null
           phone: string | null
           updated_at: string
           user_id: string
+          visit_frequency_days: number | null
         }
         Insert: {
           created_at?: string
           full_name?: string
           id?: string
+          permanent_notes?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
+          visit_frequency_days?: number | null
         }
         Update: {
           created_at?: string
           full_name?: string
           id?: string
+          permanent_notes?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+          visit_frequency_days?: number | null
         }
         Relationships: []
       }
