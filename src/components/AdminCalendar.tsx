@@ -72,7 +72,7 @@ export default function AdminCalendar() {
       if (userIds.length === 0) return data || [];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone")
+        .select("user_id, full_name, phone, permanent_notes, visit_frequency_days")
         .in("user_id", userIds);
       const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
       return data?.map((a) => ({ ...a, profile: profileMap.get(a.user_id) || null })) || [];
