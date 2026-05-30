@@ -812,39 +812,132 @@ function AdminDashboard() {
           onOpenChange={(open) => { if (!open) setEditingAppointment(null); }}
         />
       )}
+
+      {/* Create next appointment (from existing appointment) */}
+      {nextFromAppointment && (
+        <AdminCreateAppointment
+          open={!!nextFromAppointment}
+          onOpenChange={(open) => { if (!open) setNextFromAppointment(null); }}
+          fromAppointment={nextFromAppointment}
+        />
+      )}
+
+      {/* Create appointment for a client (from client card) */}
+      {createForClient && (
+        <AdminCreateAppointment
+          open={!!createForClient}
+          onOpenChange={(open) => { if (!open) setCreateForClient(null); }}
+          client={createForClient}
+        />
+      )}
+
+      {/* Edit client card */}
+      {editingClient && (
+        <AdminClientEdit
+          client={editingClient}
+          open={!!editingClient}
+          onOpenChange={(open) => { if (!open) setEditingClient(null); }}
+        />
+      )}
     </>
   );
 }
 
-function ClientDetail({ client, history, onBack, onCancel }: {
-  client: any; history: any[] | undefined; onBack: () => void; onCancel: (id: string) => void;
+function ClientDetail({ client, history, lastVisitDate, onBack, onCancel, onEdit, onCreateNext }: {
+  client: any;
+  history: any[] | undefined;
+  lastVisitDate?: string;
+  onBack: () => void;
+  onCancel: (id: string) => void;
+  onEdit: (client: any) => void;
+  onCreateNext: (client: any) => void;
 }) {
   if (!client) return null;
   const phone = client.phone?.replace(/\D/g, "");
+  const freq = client.visit_frequency_days as number | null;
+
+  let dueAlert: { label: string; tone: "due" | "overdue" } | null = null;
+  if (freq && lastVisitDate) {
+    const last = new Date(lastVisitDate + "T12:00:00");
+    const daysSince = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+    const daysToNext = freq - daysSince;
+    if (daysToNext <= 0) dueAlert = { label: `Vencido hace ${-daysToNext} días — necesita nuevo turno`, tone: "overdue" };
+    else if (daysToNext <= 3) dueAlert = { label: `Próximo turno sugerido en ${daysToNext} días`, tone: "due" };
+  }
 
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onBack}>← Volver a clientes</Button>
+
+      {dueAlert && (
+        <div className={cn(
+          "rounded-lg border p-3 flex items-center gap-2 text-sm",
+          dueAlert.tone === "overdue"
+            ? "bg-destructive/15 border-destructive/40 text-destructive"
+            : "bg-primary/10 border-primary/40 text-primary",
+        )}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium">{dueAlert.label}</span>
+        </div>
+      )}
+
       <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start justify-between flex-wrap gap-2">
             <div>
               <h3 className="font-display text-xl font-bold">{client.full_name || "Sin nombre"}</h3>
               <p className="text-muted-foreground text-sm">
                 Cliente desde {format(new Date(client.created_at), "d 'de' MMMM yyyy", { locale: es })}
               </p>
             </div>
-            {phone && (
-              <a href={`https://wa.me/54${phone}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm"><MessageCircle className="w-4 h-4 mr-1" />WhatsApp</Button>
-              </a>
-            )}
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => onEdit(client)}>
+                <Edit className="w-4 h-4 mr-1" /> Editar ficha
+              </Button>
+              <Button size="sm" onClick={() => onCreateNext(client)}>
+                <Plus className="w-4 h-4 mr-1" /> Nuevo turno
+              </Button>
+              {phone && (
+                <a href={`https://wa.me/54${phone}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm"><MessageCircle className="w-4 h-4 mr-1" />WhatsApp</Button>
+                </a>
+              )}
+            </div>
           </div>
-          {client.phone && (
-            <p className="text-sm mt-2 flex items-center gap-1 text-muted-foreground">
-              <Phone className="w-3 h-3" /> {client.phone}
-            </p>
-          )}
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground text-xs">Teléfono</p>
+              <p className="font-medium flex items-center gap-1">
+                <Phone className="w-3 h-3" /> {client.phone || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Frecuencia habitual</p>
+              <p className="font-medium flex items-center gap-1">
+                <Repeat className="w-3 h-3 text-primary" />
+                {freq ? `Cada ${freq} días` : "No definida"}
+              </p>
+            </div>
+            {lastVisitDate && (
+              <div className="col-span-2">
+                <p className="text-muted-foreground text-xs">Última visita</p>
+                <p className="font-medium">{format(new Date(lastVisitDate + "T12:00:00"), "d 'de' MMMM yyyy", { locale: es })}</p>
+              </div>
+            )}
+            <div className="col-span-2">
+              <p className="text-muted-foreground text-xs flex items-center gap-1">
+                <StickyNote className="w-3 h-3" /> Notas permanentes
+              </p>
+              {client.permanent_notes ? (
+                <p className="text-sm bg-muted/40 border border-border rounded-md p-2 mt-1 whitespace-pre-wrap">
+                  {client.permanent_notes}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic mt-1">Sin notas</p>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
       <Card className="border-border">
